@@ -6,15 +6,18 @@ This guide explains how to use and extend the fall detection system.
 
 ### 1. Running in Wokwi Simulator
 
-The easiest way to test the system is using Wokwi simulation:
+The easiest way to test the system is using the standalone Arduino sketch with Wokwi:
 
 1. Open the project in VS Code
-2. Install the Wokwi extension
+2. Install the Wokwi extension if not already installed
 3. Press F1 and select "Wokwi: Start Simulator"
-4. The simulator will show:
+4. **Important:** Open the Serial Monitor in Wokwi to see the logs
+5. The simulator will show:
    - ESP32 board
    - Slide potentiometer (force sensor)
    - Push button (nurse button)
+
+**The sketch compiles automatically in Wokwi - no build step needed!**
 
 ### 2. Interacting with the Simulation
 
@@ -29,6 +32,11 @@ The easiest way to test the system is using Wokwi simulation:
 - Hold for 2+ seconds: Long press
   - In POLLING state: Pauses monitoring for 2 minutes
 
+**Serial Monitor:**
+- All state transitions and events are logged
+- Look for messages like "Fall detected!" and "ALARM!"
+- Instructions are printed at startup
+
 ### 3. Testing Fall Detection
 
 Follow these steps to test a complete fall scenario:
@@ -37,7 +45,7 @@ Follow these steps to test a complete fall scenario:
 2. Move potentiometer UP (>15%) - Patient sits down
 3. Wait 2 seconds - System recognizes occupied state
 4. Quickly move potentiometer DOWN (<5%) - Simulates fall/stand-up
-5. Observe ALARM state and serial console message
+5. **Check Serial Monitor** - Observe ALARM state and alert messages
 6. Click button briefly - Clears alarm and returns to POLLING
 
 ## System States Explained

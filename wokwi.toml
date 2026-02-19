@@ -1,4 +1,3 @@
 [wokwi]
 version = 1
-elf = ".pio/build/wokwi-sim/firmware.elf"
-firmware = ".pio/build/wokwi-sim/firmware.bin"
+firmware = "sketch.ino"

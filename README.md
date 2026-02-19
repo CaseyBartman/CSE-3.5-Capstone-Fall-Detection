@@ -29,6 +29,7 @@ This project uses **Dependency Injection** for simulation-first development. The
 
 ```
 patient-fall-alert-system/
+├── sketch.ino                      // Standalone Arduino sketch for Wokwi (recommended)
 ├── include/
 │   ├── constants/
 │   │   ├── SystemConstants.h       // Timers, thresholds
@@ -53,21 +54,36 @@ patient-fall-alert-system/
 │   │       ├── WokwiPotentiometer.cpp  // Simulates force sensor
 │   │       ├── WokwiButton.cpp         // Simulates nurse button
 │   │       └── SerialConsoleAlert.cpp  // Simulates alerts
-│   └── main.cpp                    // Composition root
+│   └── main.cpp                    // Composition root (PlatformIO)
 ├── test/                           // Unit tests (future)
-├── platformio.ini                  // Build configurations
+├── platformio.ini                  // Build configurations (optional)
 ├── diagram.json                    // Wokwi circuit diagram
 └── wokwi.toml                      // Wokwi configuration
 ```
+
+**Note:** For Wokwi simulation, use `sketch.ino` (self-contained). For production builds with advanced features, use the PlatformIO structure.
 
 ## Getting Started
 
 ### Prerequisites
 
-- [PlatformIO](https://platformio.org/) installed
 - For simulation: [Wokwi for VS Code](https://wokwi.com/vscode) extension
+- For production: [PlatformIO](https://platformio.org/) (optional, for advanced builds)
 
-### Building for Simulation (Wokwi)
+### Quick Start - Wokwi Simulation (Recommended)
+
+The easiest way to test the system is using the standalone Arduino sketch:
+
+1. **Open in VS Code with Wokwi extension installed**
+2. **Press F1** and select "Wokwi: Start Simulator"
+3. The simulator will load `sketch.ino` and run automatically
+4. **View Serial Monitor** to see logs (click the terminal icon in Wokwi)
+
+**No build required!** Wokwi compiles the sketch automatically.
+
+### Alternative: Building with PlatformIO (Optional)
+
+If you prefer PlatformIO for advanced features:
 
 ```bash
 # Build for Wokwi simulation
@@ -93,6 +109,8 @@ pio device monitor
 
 ## Wokwi Simulation
 
+The system includes a standalone Arduino sketch (`sketch.ino`) that works directly with Wokwi without requiring PlatformIO builds.
+
 The Wokwi simulation uses:
 - **Slide Potentiometer** (Pin 34) - Simulates the force sensor
 - **Push Button** (Pin 15) - Simulates the nurse button
@@ -103,7 +121,8 @@ The Wokwi simulation uses:
 
 1. Open the project in VS Code with Wokwi extension
 2. Press F1 → "Wokwi: Start Simulator"
-3. Interact with the components:
+3. **Open Serial Monitor** in Wokwi to see logs
+4. Interact with the components:
    - Move the potentiometer slider up (high pressure)
    - Move it down quickly (simulates fall)
    - Press the button briefly (short press)
