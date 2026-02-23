@@ -1,7 +1,4 @@
 # CSE-3.5-Capstone Fall Detection System
-
-A patient fall detection system using dependency injection for simulation-first development on Arduino/ESP32.
-
 ## Overview
 
 This system monitors a force sensor (Tekscan A502) to detect when a patient stands up from a bed or chair, and sends alerts via Connexxall. It also listens for BLE button presses from nurses to pause, calibrate, or acknowledge alarms.
@@ -54,14 +51,18 @@ patient-fall-alert-system/
 │   │       ├── WokwiPotentiometer.cpp  // Simulates force sensor
 │   │       ├── WokwiButton.cpp         // Simulates nurse button
 │   │       └── SerialConsoleAlert.cpp  // Simulates alerts
-│   └── main.cpp                    // Composition root (PlatformIO)
+│   └── main.cpp                    // Composition root
 ├── test/                           // Unit tests (future)
-├── platformio.ini                  // Build configurations (optional)
 ├── diagram.json                    // Wokwi circuit diagram
 └── wokwi.toml                      // Wokwi configuration
 ```
 
-### Quick Start - Wokwi Simulation (Recommended)
+### Quick Start - Wokwi Simulation
+
+Run the ``combine_to_sketch.py`` script with the flag to decide whether we want to build for production or simulation with dependency injection.
+
+Example: 
+```$ python combine_to_sketch.py``` then, copy the sketch.ino file and place it into the web browser for Wokwi, and copy the ```diagram.json``` file and place it into that browser project as well. You can then build the project and run it there to see all the logs and test behavior. 
 
 
 ## License
