@@ -65,6 +65,33 @@ Example:
 ```$ python combine_to_sketch.py``` then, copy the sketch.ino file and place it into the web browser for Wokwi, and copy the ```diagram.json``` file and place it into that browser project as well. You can then build the project and run it there to see all the logs and test behavior. 
 
 
-## License
+### Development Standards
+## Engineering Standards & Testing Manifesto
+To ensure our codebase remains scalable and our tests act as reliable documentation, we adhere to the following architectural principles:
 
+## Logic & Abstraction
+The Stepdown Rule: Code must read as a top-down narrative. High-level logic stays at the top, descending one level of abstraction at a time.
+
+Encapsulation Over Exposure: Prioritize hiding storage or internal structural details. The top layer should never interact with the "how," only the "what."
+
+Helper Logic: If any conditional (if) path exceeds 2 lines, it must be extracted into a descriptive helper function.
+
+Function Size: Keep functions concise. Target 15 lines, with a hard limit of 20 lines.
+
+## Naming & Documentation
+The "Why/What/How" Rule: Variable and function names must clearly communicate their purpose and intent.
+
+Domain Context: Variable naming should reflect domain context (e.g., xaLienPayload) rather than generic terms.
+
+Boolean Prefixing: All flags must use is, has, or should prefixes (e.g., isModalOpen, hasRequirement).
+
+
+## Prohibited Practices
+No Magic Values: No literals in assertions or actions. Use named constants to explain the "why" behind a value.
+
+DRY Strings: Any string used in 2 or more places must be moved to a central constant file.
+
+Comments: Avoid these wherever possible. If you require a comment to explain the code written, the code is not readable and should be clearly refactored to follow our naming standards.
+
+## License
 This is a capstone project for Ohio State University, CSE 5911
