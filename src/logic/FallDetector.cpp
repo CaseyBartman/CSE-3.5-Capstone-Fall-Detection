@@ -60,22 +60,31 @@ void FallDetector::handleIdleState() {
 void FallDetector::handlePollingState() {
     // Read sensor data
     float pressure = _sensor->getPressurePercentage();
-    bool currentlyOccupied = _sensor->isOccupied();
+    bool occupied = _sensor->isOccupied();
+    
+    // Track occupation state changes
+    if (!_wasOccupied && occupied) {
+        _wasOccupied = true;
+    }
     
     // Detect stand-up (fall detection): was occupied, now pressure dropped significantly
-    if (_wasOccupied && pressure < FALL_DETECTION_THRESHOLD) {
-        Serial.println("Fall detected! Pressure dropped significantly.");
+    if (_wasOccupied && !occupied && pressure < FALL_DETECTION_THRESHOLD) {
+        Serial.println("Fall detected! Occupant left bed.");
+        _alert->triggerFallAlarm();
         transitionToState(SystemState::ALARM);
         return;
     }
     
-    // Update occupied state
-    _wasOccupied = currentlyOccupied;
-    
-    // Check for nurse button hold (long press) -> pause
-    if (_button->wasLongPressed()) {
-        Serial.println("Nurse pressed hold button - Pausing input");
+    // Check for nurse button presses
+    if (_button->wasShortPressed()) {
+        Serial.println("Pause requested by nurse (short press)");
         transitionToState(SystemState::INPUT_PAUSED);
+        return;
+    }
+    
+    if (_button->wasLongPressed()) {
+        Serial.println("Calibration requested by nurse (long press)");
+        transitionToState(SystemState::CALIBRATION);
         return;
     }
 }
@@ -91,16 +100,9 @@ void FallDetector::handleAlarmState() {
 }
 
 void FallDetector::handlePauseState() {
-    // Check for short press to start calibration
-    if (_button->wasShortPressed()) {
-        Serial.println("Starting calibration sequence");
-        transitionToState(SystemState::CALIBRATION);
-        return;
-    }
-    
-    // Check if pause duration expired
+    // Check if pause duration expired, resume monitoring
     if (isPauseDurationExpired()) {
-        Serial.println("Pause duration expired - Resuming monitoring");
+        Serial.println("Pause expired, resuming monitoring");
         transitionToState(SystemState::POLLING);
     }
 }

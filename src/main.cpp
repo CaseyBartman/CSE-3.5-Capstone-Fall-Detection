@@ -28,8 +28,8 @@ void setup() {
     // 1. Instantiate drivers based on environment
     #ifdef IS_SIMULATION
         Serial.println("Running in SIMULATION mode (Wokwi)");
-        auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD); // Pin 34 (ADC1_CH6)
-        auto* button = new WokwiButton(15);                                     // Pin 15
+        auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
+        auto* button = new WokwiButton(15);
         auto* alert  = new SerialConsoleAlert();
     #else
         Serial.println("Running in PRODUCTION mode (Real Hardware)");
