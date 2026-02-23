@@ -17,7 +17,6 @@ private:
     bool _wasOccupied;
     float _calibrationThreshold;
 
-    // Helper functions (Stepdown Rule)
     void handleIdleState();
     void handlePollingState();
     void handleAlarmState();

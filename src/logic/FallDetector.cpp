@@ -10,18 +10,15 @@ FallDetector::FallDetector(IForceSensor* sensor, INurseInput* button, IAlertSyst
 void FallDetector::init() {
     Serial.println("Initializing Fall Detection System...");
     
-    // Initialize all hardware components
     _sensor->init();
     _button->init();
     _alert->init();
     
-    // Boot up system - transition to IDLE
     transitionToState(SystemState::IDLE);
     Serial.println("System Armed - Ready for operation");
 }
 
 void FallDetector::update() {
-    // Update button state first
     _button->update();
     
     // State machine
@@ -42,14 +39,14 @@ void FallDetector::update() {
             handleAlarmState();
             break;
         case SystemState::SYSTEM_OFF:
-            // Do nothing in off state
+            // Tbd...
             break;
     }
 }
 
 void FallDetector::handleIdleState() {
     // Check if sensor is ready and WiFi connected (simulated as always ready in Wokwi)
-    // In production, you would check WiFi.status() == WL_CONNECTED
+    // In production, we would check something like WiFi.status() == WL_CONNECTED
     bool isReady = true; // Simplified for now
     
     if (isReady) {
@@ -58,24 +55,16 @@ void FallDetector::handleIdleState() {
 }
 
 void FallDetector::handlePollingState() {
-    // Read sensor data
     float pressure = _sensor->getPressurePercentage();
     bool occupied = _sensor->isOccupied();
     
-    // Track occupation state changes
-    if (!_wasOccupied && occupied) {
-        _wasOccupied = true;
-    }
-    
-    // Detect stand-up (fall detection): was occupied, now pressure dropped significantly
-    if (_wasOccupied && !occupied && pressure < FALL_DETECTION_THRESHOLD) {
-        Serial.println("Fall detected! Occupant left bed.");
+    if (occupied && pressure > FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
+        Serial.println("Alert! Person detected on mat without supervision.");
         _alert->triggerFallAlarm();
         transitionToState(SystemState::ALARM);
         return;
     }
-    
-    // Check for nurse button presses
+
     if (_button->wasShortPressed()) {
         Serial.println("Pause requested by nurse (short press)");
         transitionToState(SystemState::INPUT_PAUSED);
@@ -90,8 +79,6 @@ void FallDetector::handlePollingState() {
 }
 
 void FallDetector::handleAlarmState() {
-    // Alarm is already triggered in transitionToState
-    // Wait for nurse to press button to clear alarm
     if (_button->wasShortPressed()) {
         Serial.println("Nurse pressed button - Clearing alarm");
         _alert->clearAlarm();
@@ -100,7 +87,6 @@ void FallDetector::handleAlarmState() {
 }
 
 void FallDetector::handlePauseState() {
-    // Check if pause duration expired, resume monitoring
     if (isPauseDurationExpired()) {
         Serial.println("Pause expired, resuming monitoring");
         transitionToState(SystemState::POLLING);
@@ -108,11 +94,11 @@ void FallDetector::handlePauseState() {
 }
 
 void FallDetector::handleCalibrationState() {
-    // During calibration, continuously sample the sensor
     float pressure = _sensor->getPressurePercentage();
     
+    //This is a very basic implementation- not at all reflective of how we should handle the calibration, but should work for a rough draft simulation
     if (isCalibrationDurationExpired()) {
-        // Save new threshold (current pressure reading)
+        // Save new threshold (current pressure reading)? 
         _calibrationThreshold = pressure;
         Serial.print("Calibration complete - New threshold: ");
         Serial.print(_calibrationThreshold);
@@ -131,7 +117,7 @@ bool FallDetector::isCalibrationDurationExpired() {
 
 void FallDetector::transitionToState(SystemState newState) {
     if (newState == _currentState) {
-        return; // Already in this state
+        return;
     }
     
     logStateTransition(newState);
@@ -165,8 +151,6 @@ void FallDetector::transitionToState(SystemState newState) {
 
 void FallDetector::logStateTransition(SystemState newState) {
     Serial.print("State Transition: ");
-    
-    // Log current state
     switch (_currentState) {
         case SystemState::SYSTEM_OFF: Serial.print("SYSTEM_OFF"); break;
         case SystemState::IDLE: Serial.print("IDLE"); break;
@@ -177,8 +161,6 @@ void FallDetector::logStateTransition(SystemState newState) {
     }
     
     Serial.print(" -> ");
-    
-    // Log new state
     switch (newState) {
         case SystemState::SYSTEM_OFF: Serial.print("SYSTEM_OFF"); break;
         case SystemState::IDLE: Serial.print("IDLE"); break;

@@ -5,16 +5,16 @@ This system monitors a force sensor (Tekscan A502) to detect when a patient stan
 
 ## System States
 
-| Current State | Input/Trigger | New State | Logic/Output Action |
-|--------------|---------------|-----------|-------------------|
-| SYSTEM_OFF | System power on | IDLE | bootUpSystem() |
-| IDLE | isWifiConnected && isSensorReady | POLLING | Log: "System Armed" |
-| POLLING | Nurse presses hold button | INPUT_PAUSED | pauseLogic() (for 2 mins) |
-| INPUT_PAUSED | Timer > PAUSE_DURATION_MS | POLLING | Resume monitoring |
-| INPUT_PAUSED | Button pressed once (short) | CALIBRATION | Start zeroing sequence |
-| CALIBRATION | timer > CALIB_DURATION_MS | POLLING | Save new zero offsets |
-| POLLING | detectedForce > THRESHOLD | ALARM | Send alarm to Connexxall |
-| ALARM | Nurse Press Button | POLLING | clearConnexxallAlert() |
+| Current State |            Input/Trigger         |   New State  |    Logic/Output Action    |
+|---------------|----------------------------------|--------------|---------------------------|
+| SYSTEM_OFF    | System power on                  | IDLE         | bootUpSystem()            |
+| IDLE          | isWifiConnected && isSensorReady | POLLING      | Log: "System Armed"       |
+| POLLING       | Nurse presses hold button        | INPUT_PAUSED | pauseLogic() (for 2 mins) |
+| INPUT_PAUSED  | Timer > PAUSE_DURATION_MS        | POLLING      | Resume monitoring         |
+| INPUT_PAUSED  | Button pressed once (short)      | CALIBRATION  | Start zeroing sequence    |
+| CALIBRATION   | timer > CALIB_DURATION_MS        | POLLING      | Save new zero offsets     |
+| POLLING       | detectedForce > THRESHOLD        | ALARM        | Send alarm to Connexxall  |
+| ALARM         | Nurse Press Button               | POLLING      | clearConnexxallAlert()    |
 
 ## Architecture
 
@@ -67,4 +67,4 @@ Example:
 
 ## License
 
-This is a capstone project for CSE 3.5.
+This is a capstone project for Ohio State University, CSE 5911

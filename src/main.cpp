@@ -2,7 +2,7 @@
 #include "logic/FallDetector.h"
 #include "constants/SystemConstants.h"
 
-// Conditional imports based on platformio.ini build flags
+// Conditional imports based on build flags
 #ifdef IS_SIMULATION
     #include "drivers/sim/WokwiPotentiometer.cpp"
     #include "drivers/sim/WokwiButton.cpp"
@@ -14,18 +14,16 @@
     #include "constants/NetworkConstants.h"
 #endif
 
-// Global pointer (Initialized in setup)
 FallDetector* systemController = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    delay(1000); // Allow serial to initialize
+    delay(1000);
     
     Serial.println("========================================");
     Serial.println("Patient Fall Detection System");
     Serial.println("========================================");
 
-    // 1. Instantiate drivers based on environment
     #ifdef IS_SIMULATION
         Serial.println("Running in SIMULATION mode (Wokwi)");
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
@@ -38,10 +36,7 @@ void setup() {
         auto* alert  = new ConnexxallWiFi(WIFI_SSID, WIFI_PASSWORD);
     #endif
 
-    // 2. Inject dependencies into logic controller
     systemController = new FallDetector(sensor, button, alert);
-    
-    // 3. Initialize the system
     systemController->init();
     
     Serial.println("========================================");
@@ -50,9 +45,8 @@ void setup() {
 }
 
 void loop() {
-    // 4. Delegate to logic controller
     systemController->update();
     
-    // Small delay for system stability
+    //Small delay for system stability. To be tested with physical sensor...
     delay(SENSOR_SAMPLE_RATE_MS);
 }

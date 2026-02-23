@@ -25,37 +25,35 @@ public:
     }
 
     void update() override {
-        // Clear previous flags
         _shortPressFlag = false;
         _longPressFlag = false;
         
-        // Read current state (LOW = pressed with pullup)
         _currentState = digitalRead(_pin);
         
-        // Button just pressed
-        if (_currentState == LOW && _lastState == HIGH) {
+        bool buttonWasJustPressed = _currentState == LOW && _lastState == HIGH;
+        if (buttonWasJustPressed) {
             _pressStartTime = millis();
             _longPressTriggered = false;
         }
         
-        // Button is being held
-        if (_currentState == LOW && _lastState == LOW) {
+        bool isButtonBeingHeld = _currentState == LOW && _lastState == LOW;
+        if (isButtonBeingHeld) {
             unsigned long pressDuration = millis() - _pressStartTime;
             
-            // Long press detected
-            if (pressDuration >= LONG_PRESS_MS && !_longPressTriggered) {
+            bool wasButtonPressLong = pressDuration >= LONG_PRESS_MS && !_longPressTriggered;
+            if (wasButtonPressLong) {
                 _longPressFlag = true;
                 _longPressTriggered = true;
                 Serial.println("Long press detected");
             }
         }
         
-        // Button just released
-        if (_currentState == HIGH && _lastState == LOW) {
+        bool wasButtonReleased = _currentState == HIGH && _lastState == LOW;
+        if (wasButtonReleased) {
             unsigned long pressDuration = millis() - _pressStartTime;
             
-            // Short press (released before long press threshold)
-            if (pressDuration < LONG_PRESS_MS) {
+            bool wasButtonPressShort = pressDuration < LONG_PRESS_MS;
+            if (wasButtonPressShort) {
                 _shortPressFlag = true;
                 Serial.println("Short press detected");
             }

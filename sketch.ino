@@ -10,16 +10,16 @@
 #pragma once
 
 // WiFi Configuration (for production use)
-const char* WIFI_SSID = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "WIFI_SSID";
+const char* WIFI_PASSWORD = "WIFI_PASSWORD";
 
 // Connexxall API Configuration
 const char* CONNEXXALL_API_ENDPOINT = "https://api.connexxall.com/alerts";
-const char* CONNEXXALL_API_KEY = "YOUR_API_KEY";
+const char* CONNEXXALL_API_KEY = "API_KEY";
 
 // BLE Configuration
-const char* BLE_DEVICE_MAC = "YOUR_BLE_MAC_ADDRESS";
-const char* BLE_SERVICE_UUID = "YOUR_SERVICE_UUID";
+const char* BLE_DEVICE_MAC = "BLE_MAC_ADDRESS";
+const char* BLE_SERVICE_UUID = "SERVICE_UUID";
 
 
 // ===== include/constants\SystemConstants.h =====
@@ -280,7 +280,6 @@ private:
     bool _wasOccupied;
     float _calibrationThreshold;
 
-    // Helper functions (Stepdown Rule)
     void handleIdleState();
     void handlePollingState();
     void handleAlarmState();
@@ -531,37 +530,35 @@ public:
     }
 
     void update() override {
-        // Clear previous flags
         _shortPressFlag = false;
         _longPressFlag = false;
         
-        // Read current state (LOW = pressed with pullup)
         _currentState = digitalRead(_pin);
         
-        // Button just pressed
-        if (_currentState == LOW && _lastState == HIGH) {
+        bool buttonWasJustPressed = _currentState == LOW && _lastState == HIGH;
+        if (buttonWasJustPressed) {
             _pressStartTime = millis();
             _longPressTriggered = false;
         }
         
-        // Button is being held
-        if (_currentState == LOW && _lastState == LOW) {
+        bool isButtonBeingHeld = _currentState == LOW && _lastState == LOW;
+        if (isButtonBeingHeld) {
             unsigned long pressDuration = millis() - _pressStartTime;
             
-            // Long press detected
-            if (pressDuration >= LONG_PRESS_MS && !_longPressTriggered) {
+            bool wasButtonPressLong = pressDuration >= LONG_PRESS_MS && !_longPressTriggered;
+            if (wasButtonPressLong) {
                 _longPressFlag = true;
                 _longPressTriggered = true;
                 Serial.println("Long press detected");
             }
         }
         
-        // Button just released
-        if (_currentState == HIGH && _lastState == LOW) {
+        bool wasButtonReleased = _currentState == HIGH && _lastState == LOW;
+        if (wasButtonReleased) {
             unsigned long pressDuration = millis() - _pressStartTime;
             
-            // Short press (released before long press threshold)
-            if (pressDuration < LONG_PRESS_MS) {
+            bool wasButtonPressShort = pressDuration < LONG_PRESS_MS;
+            if (wasButtonPressShort) {
                 _shortPressFlag = true;
                 Serial.println("Short press detected");
             }
@@ -595,16 +592,19 @@ class WokwiPotentiometer : public IForceSensor {
     const float _threshold;
   public:
     WokwiPotentiometer(int pin, float threshold) : _pin(pin), _threshold(threshold) {}
+
     void init() override {
       pinMode(_pin, INPUT);
       Serial.print("WokwiPotentiometer initialized on pin ");
       Serial.println(_pin);
     }
+
     float getPressurePercentage() override {
       int raw = analogRead(_pin);
       // Map 12-bit ADC (0-4095) to 0-100%
       return (float)raw / 40.95f;
     }
+
     bool isOccupied() override {
       return getPressurePercentage() > _threshold;
     }
@@ -625,18 +625,15 @@ FallDetector::FallDetector(IForceSensor* sensor, INurseInput* button, IAlertSyst
 void FallDetector::init() {
     Serial.println("Initializing Fall Detection System...");
     
-    // Initialize all hardware components
     _sensor->init();
     _button->init();
     _alert->init();
     
-    // Boot up system - transition to IDLE
     transitionToState(SystemState::IDLE);
     Serial.println("System Armed - Ready for operation");
 }
 
 void FallDetector::update() {
-    // Update button state first
     _button->update();
     
     // State machine
@@ -657,14 +654,14 @@ void FallDetector::update() {
             handleAlarmState();
             break;
         case SystemState::SYSTEM_OFF:
-            // Do nothing in off state
+            // Tbd...
             break;
     }
 }
 
 void FallDetector::handleIdleState() {
     // Check if sensor is ready and WiFi connected (simulated as always ready in Wokwi)
-    // In production, you would check WiFi.status() == WL_CONNECTED
+    // In production, we would check something like WiFi.status() == WL_CONNECTED
     bool isReady = true; // Simplified for now
     
     if (isReady) {
@@ -673,24 +670,16 @@ void FallDetector::handleIdleState() {
 }
 
 void FallDetector::handlePollingState() {
-    // Read sensor data
     float pressure = _sensor->getPressurePercentage();
     bool occupied = _sensor->isOccupied();
     
-    // Track occupation state changes
-    if (!_wasOccupied && occupied) {
-        _wasOccupied = true;
-    }
-    
-    // Detect stand-up (fall detection): was occupied, now pressure dropped significantly
-    if (_wasOccupied && !occupied && pressure < FALL_DETECTION_THRESHOLD) {
-        Serial.println("Fall detected! Occupant left bed.");
+    if (occupied && pressure > FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
+        Serial.println("Alert! Person detected on mat without supervision.");
         _alert->triggerFallAlarm();
         transitionToState(SystemState::ALARM);
         return;
     }
-    
-    // Check for nurse button presses
+
     if (_button->wasShortPressed()) {
         Serial.println("Pause requested by nurse (short press)");
         transitionToState(SystemState::INPUT_PAUSED);
@@ -705,8 +694,6 @@ void FallDetector::handlePollingState() {
 }
 
 void FallDetector::handleAlarmState() {
-    // Alarm is already triggered in transitionToState
-    // Wait for nurse to press button to clear alarm
     if (_button->wasShortPressed()) {
         Serial.println("Nurse pressed button - Clearing alarm");
         _alert->clearAlarm();
@@ -715,7 +702,6 @@ void FallDetector::handleAlarmState() {
 }
 
 void FallDetector::handlePauseState() {
-    // Check if pause duration expired, resume monitoring
     if (isPauseDurationExpired()) {
         Serial.println("Pause expired, resuming monitoring");
         transitionToState(SystemState::POLLING);
@@ -723,11 +709,11 @@ void FallDetector::handlePauseState() {
 }
 
 void FallDetector::handleCalibrationState() {
-    // During calibration, continuously sample the sensor
     float pressure = _sensor->getPressurePercentage();
     
+    //This is a very basic implementation- not at all reflective of how we should handle the calibration, but should work for a rough draft simulation
     if (isCalibrationDurationExpired()) {
-        // Save new threshold (current pressure reading)
+        // Save new threshold (current pressure reading)? 
         _calibrationThreshold = pressure;
         Serial.print("Calibration complete - New threshold: ");
         Serial.print(_calibrationThreshold);
@@ -746,7 +732,7 @@ bool FallDetector::isCalibrationDurationExpired() {
 
 void FallDetector::transitionToState(SystemState newState) {
     if (newState == _currentState) {
-        return; // Already in this state
+        return;
     }
     
     logStateTransition(newState);
@@ -780,8 +766,6 @@ void FallDetector::transitionToState(SystemState newState) {
 
 void FallDetector::logStateTransition(SystemState newState) {
     Serial.print("State Transition: ");
-    
-    // Log current state
     switch (_currentState) {
         case SystemState::SYSTEM_OFF: Serial.print("SYSTEM_OFF"); break;
         case SystemState::IDLE: Serial.print("IDLE"); break;
@@ -792,8 +776,6 @@ void FallDetector::logStateTransition(SystemState newState) {
     }
     
     Serial.print(" -> ");
-    
-    // Log new state
     switch (newState) {
         case SystemState::SYSTEM_OFF: Serial.print("SYSTEM_OFF"); break;
         case SystemState::IDLE: Serial.print("IDLE"); break;
@@ -812,7 +794,7 @@ void FallDetector::logStateTransition(SystemState newState) {
 #include <Arduino.h>
 
 
-// Conditional imports based on platformio.ini build flags
+// Conditional imports based on build flags
 #ifdef IS_SIMULATION
 
 
@@ -824,18 +806,16 @@ void FallDetector::logStateTransition(SystemState newState) {
 
 #endif
 
-// Global pointer (Initialized in setup)
 FallDetector* systemController = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    delay(1000); // Allow serial to initialize
+    delay(1000);
     
     Serial.println("========================================");
     Serial.println("Patient Fall Detection System");
     Serial.println("========================================");
 
-    // 1. Instantiate drivers based on environment
     #ifdef IS_SIMULATION
         Serial.println("Running in SIMULATION mode (Wokwi)");
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
@@ -848,10 +828,7 @@ void setup() {
         auto* alert  = new ConnexxallWiFi(WIFI_SSID, WIFI_PASSWORD);
     #endif
 
-    // 2. Inject dependencies into logic controller
     systemController = new FallDetector(sensor, button, alert);
-    
-    // 3. Initialize the system
     systemController->init();
     
     Serial.println("========================================");
@@ -860,10 +837,7 @@ void setup() {
 }
 
 void loop() {
-    // 4. Delegate to logic controller
     systemController->update();
-    
-    // Small delay for system stability
     delay(SENSOR_SAMPLE_RATE_MS);
 }
 
