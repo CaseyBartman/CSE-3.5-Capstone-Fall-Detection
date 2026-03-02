@@ -142,8 +142,57 @@ class TestParser:
 class TestReporter:
     """Formats and displays test results"""
     
+    # Map test names to their logical categories
+    TEST_CATEGORIES = {
+        'Initialization': [
+            'InitializationCreatesAllComponents',
+            'SystemStartsInIdleState',
+            'AllMocksAreInitialized',
+        ],
+        'State Transitions': [
+            'IdleToPollingTransition',
+            'PollingToAlarmOnFallDetection',
+            'AlarmToPolling_OnButtonPress',
+            'PollingToInputPaused_OnShortPress',
+            'PollingToCalibration_OnLongPress',
+            'InputPausedToPolling_OnTimeout',
+            'CalibrationToPolling_OnTimeout',
+        ],
+        'Fall Detection Logic': [
+            'FallDetectedWhenPressureRisesAboveThreshold',
+            'AlarmOnGradualPressureChange',
+            'AlarmTriggerCountIncrementsCorrectly',
+            'AlarmClearedOnButtonPress',
+        ],
+        'Button Handling': [
+            'ShortPressClearsAlarm',
+            'ShortPressPausesMonitoring',
+            'LongPressTriggerCalibration',
+            'MultipleButtonPressesHandleSequentially',
+        ],
+        'Timing & Expiration': [
+            'PauseDurationExpires_AtExactTime',
+            'CalibrationDurationExpires_AtExactTime',
+            'PauseDoesNotExpireEarly',
+            'CalibrationDoesNotExpireEarly',
+        ],
+        'Integration & Edge Cases': [
+            'StateTransitionSequence',
+            'ResetBetweenTests',
+            'AlertCountersResetOnNewDetector',
+        ],
+    }
+    
     def __init__(self, parser: TestParser):
         self.parser = parser
+    
+    def get_test_category(self, test_name: str) -> str:
+        """Get the category for a test based on its name"""
+        test_method = test_name.split('.')[1] if '.' in test_name else test_name
+        for category, tests in self.TEST_CATEGORIES.items():
+            if test_method in tests:
+                return category
+        return 'Uncategorized'
     
     def print_header(self) -> None:
         """Print test run header"""
@@ -176,53 +225,118 @@ class TestReporter:
         print()
     
     def print_passed_tests(self) -> None:
-        """Print list of passed tests"""
+        """Print list of passed tests organized by category"""
         if not self.parser.passed_tests:
             return
         
-        print(f"{Colors.BOLD}{Colors.GREEN}✓ PASSED TESTS ({len(self.parser.passed_tests)}):{Colors.RESET}")
+        print(f"{Colors.BOLD}{Colors.GREEN}✓ PASSED TESTS ({len(self.parser.passed_tests)}):{Colors.RESET}\n")
         
-        # Group by suite to avoid repeating suite names
-        current_suite = None
+        # Group tests by category
+        tests_by_category = {}
         for test in self.parser.passed_tests:
-            suite_name = test['name'].split('.')[0]
-            test_name = test['name'].split('.')[1] if '.' in test['name'] else test['name']
-            duration = test['duration']
+            category = self.get_test_category(test['name'])
+            if category not in tests_by_category:
+                tests_by_category[category] = []
+            tests_by_category[category].append(test)
+        
+        # Print each category with its tests
+        for category in self.TEST_CATEGORIES.keys():
+            if category not in tests_by_category:
+                continue
             
-            # Print suite header only if it changed
-            if suite_name != current_suite:
-                if current_suite is not None:
-                    print()  # Blank line between suites
-                print(f"  {Colors.GREEN}✓{Colors.RESET} {suite_name}")
-                current_suite = suite_name
+            tests = tests_by_category[category]
+            print(f"  {Colors.GREEN}✓{Colors.RESET} {Colors.BOLD}{category}{Colors.RESET} ({len(tests)} test{'s' if len(tests) != 1 else ''})")
             
-            print(f"      └─ {test_name} ({duration}ms)")
+            for test in tests:
+                test_name = test['name'].split('.')[1] if '.' in test['name'] else test['name']
+                duration = test['duration']
+                print(f"      └─ {test_name} ({duration}ms)")
+            
+            print()  # Blank line between categories
+        
+        # Print uncategorized tests if any
+        if 'Uncategorized' in tests_by_category:
+            tests = tests_by_category['Uncategorized']
+            print(f"  {Colors.YELLOW}?{Colors.RESET} {Colors.BOLD}Uncategorized{Colors.RESET} ({len(tests)} test{'s' if len(tests) != 1 else ''})")
+            
+            for test in tests:
+                test_name = test['name'].split('.')[1] if '.' in test['name'] else test['name']
+                duration = test['duration']
+                print(f"      └─ {test_name} ({duration}ms)")
+            
+            print()
+        
         print()
     
     def print_failed_tests(self) -> None:
-        """Print detailed information about failed tests"""
+        """Print detailed information about failed tests organized by category"""
         if not self.parser.failed_tests:
             return
         
         print(f"{Colors.BOLD}{Colors.RED}✗ FAILED TESTS ({len(self.parser.failed_tests)}):{Colors.RESET}\n")
         
-        for i, test in enumerate(self.parser.failed_tests, 1):
-            test_name = test['name']
-            suite_name = test_name.split('.')[0]
-            test_method = test_name.split('.')[1]
+        # Group tests by category
+        tests_by_category = {}
+        for test in self.parser.failed_tests:
+            category = self.get_test_category(test['name'])
+            if category not in tests_by_category:
+                tests_by_category[category] = []
+            tests_by_category[category].append(test)
+        
+        # Print each category with its failed tests
+        test_counter = 1
+        for category in self.TEST_CATEGORIES.keys():
+            if category not in tests_by_category:
+                continue
             
-            print(f"{Colors.RED}{Colors.BOLD}[{i}] {test_name}{Colors.RESET}")
-            print(f"    Suite:   {suite_name}")
-            print(f"    Method:  {test_method}")
+            tests = tests_by_category[category]
+            print(f"  {Colors.RED}{Colors.BOLD}{category}{Colors.RESET} ({len(tests)} failed):")
             
-            # Print error details if available
-            if test_name in self.parser.test_errors:
-                errors = self.parser.test_errors[test_name]
-                if errors:
-                    print(f"{Colors.DIM}    Error Details:{Colors.RESET}")
-                    for error_line in errors:  # Show all error lines
-                        print(f"      {Colors.YELLOW}{error_line}{Colors.RESET}")
-            print()
+            for test in tests:
+                test_name = test['name']
+                suite_name = test_name.split('.')[0]
+                test_method = test_name.split('.')[1]
+                
+                print(f"    {Colors.RED}{Colors.BOLD}[{test_counter}] {test_name}{Colors.RESET}")
+                print(f"        Suite:    {suite_name}")
+                print(f"        Category: {category}")
+                print(f"        Method:   {test_method}")
+                
+                # Print error details if available
+                if test_name in self.parser.test_errors:
+                    errors = self.parser.test_errors[test_name]
+                    if errors:
+                        print(f"        {Colors.DIM}Error Details:{Colors.RESET}")
+                        for error_line in errors:  # Show all error lines
+                            print(f"          {Colors.YELLOW}{error_line}{Colors.RESET}")
+                print()
+                test_counter += 1
+            
+            print()  # Blank line between categories
+        
+        # Print uncategorized tests if any
+        if 'Uncategorized' in tests_by_category:
+            tests = tests_by_category['Uncategorized']
+            print(f"  {Colors.YELLOW}{Colors.BOLD}Uncategorized{Colors.RESET} ({len(tests)} failed):")
+            
+            for test in tests:
+                test_name = test['name']
+                suite_name = test_name.split('.')[0]
+                test_method = test_name.split('.')[1]
+                
+                print(f"    {Colors.RED}{Colors.BOLD}[{test_counter}] {test_name}{Colors.RESET}")
+                print(f"        Suite:   {suite_name}")
+                print(f"        Method:  {test_method}")
+                
+                # Print error details if available
+                if test_name in self.parser.test_errors:
+                    errors = self.parser.test_errors[test_name]
+                    if errors:
+                        print(f"        {Colors.DIM}Error Details:{Colors.RESET}")
+                        for error_line in errors:
+                            print(f"          {Colors.YELLOW}{error_line}{Colors.RESET}")
+                print()
+                test_counter += 1
     
     def print_report(self) -> int:
         """Print complete test report and return exit code"""

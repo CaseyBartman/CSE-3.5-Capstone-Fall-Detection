@@ -60,7 +60,6 @@ void FallDetector::handlePollingState() {
     
     if (occupied && pressure > FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
         Serial.println("Alert! Person detected on mat without supervision.");
-        _alert->triggerFallAlarm();
         transitionToState(SystemState::ALARM);
         return;
     }

@@ -4,6 +4,7 @@
 #include "test/helpers/TestFixture.h"
 #include "test/helpers/MockSensors.h"
 #include "test/helpers/TimeSimulator.h"
+#include "test/TestConstants.h"
 
 /**
  * Unit Tests for Fall Detection State Machine
@@ -163,17 +164,17 @@ TEST_F(FallDetectorTest, CalibrationToPolling_OnTimeout) {
 // TEST SUITE 3: FALL DETECTION LOGIC
 // ============================================================================
 
-TEST_F(FallDetectorTest, FallDetectedWhenPressureDropsBelowThreshold) {
+TEST_F(FallDetectorTest, FallDetectedWhenPressureRisesAboveThreshold) {
     // Setup: Get to POLLING state with patient sitting
     fixture->transitionToPolling();
-    fixture->setPatientsitting(40.0f);
+    fixture->setPatientsitting(TEST_PRESSURE_PATIENT_SITTING);
     fixture->getDetector()->update();
     
     // Verify system registered occupancy
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    // Patient stands up (pressure drops)
-    fixture->setPatientStandingUp(100.0f);
+    // Patient stands up
+    fixture->setPatientStandingUp(TEST_PRESSURE_PATIENT_STANDING);
     fixture->getDetector()->update();
     
     // Verify alarm triggered
@@ -181,22 +182,25 @@ TEST_F(FallDetectorTest, FallDetectedWhenPressureDropsBelowThreshold) {
     EXPECT_GT(fixture->getAlert()->getAlarmTriggeredCount(), 0);
 }
 
-TEST_F(FallDetectorTest, NoFalseAlarmOnGradualPressureChange) {
+TEST_F(FallDetectorTest, AlarmOnGradualPressureChange) {
     // Setup: Get to POLLING state
     fixture->transitionToPolling();
     
-    // Simulate gradual pressure change (no alarm should trigger)
-    fixture->getSensor()->setMockPressure(35.0f);
+    // Simulate gradual pressure change (alarm should trigger only when above threshold)
+    // Step 1: Pressure below threshold - no alarm
+    fixture->getSensor()->setMockPressure(TEST_PRESSURE_BELOW_THRESHOLD);
     fixture->getDetector()->update();
     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    fixture->getSensor()->setMockPressure(25.0f);
+    // Step 2: Pressure near but still below threshold - no alarm
+    fixture->getSensor()->setMockPressure(TEST_PRESSURE_NEAR_THRESHOLD);
     fixture->getDetector()->update();
     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    fixture->getSensor()->setMockPressure(18.0f);
+    // Step 3: Pressure above threshold - alarm should trigger
+    fixture->getSensor()->setMockPressure(TEST_PRESSURE_ABOVE_THRESHOLD);
     fixture->getDetector()->update();
-    EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+    EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::ALARM);
 }
 
 TEST_F(FallDetectorTest, AlarmTriggerCountIncrementsCorrectly) {
@@ -333,8 +337,8 @@ TEST_F(FallDetectorTest, PauseDoesNotExpireEarly) {
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
-    // Advance time to 1 second before expiration
-    fixture->getTime()->advanceMs(PAUSE_DURATION_MS - 1000);
+    // Advance time to just before expiration
+    fixture->getTime()->advanceMs(PAUSE_DURATION_MS - TEST_TIME_BEFORE_EXPIRY);
     fixture->getDetector()->update();
     
     // Should still be paused
@@ -348,8 +352,8 @@ TEST_F(FallDetectorTest, CalibrationDoesNotExpireEarly) {
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::CALIBRATION);
     
-    // Advance time to 1 second before expiration
-    fixture->getTime()->advanceMs(CALIB_DURATION_MS - 1000);
+    // Advance time to just before expiration
+    fixture->getTime()->advanceMs(CALIB_DURATION_MS - TEST_TIME_BEFORE_EXPIRY);
     fixture->getDetector()->update();
     
     // Should still be in calibration
