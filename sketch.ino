@@ -34,7 +34,7 @@ const unsigned long LONG_PRESS_MS = 2000;        // Long press threshold
 
 // Sensor Thresholds
 const float DEFAULT_PRESSURE_THRESHOLD = 15.0;   // Default 15% threshold for occupied state
-const float FALL_DETECTION_THRESHOLD = 5.0;      // Threshold for detecting stand-up (fall below this %)
+const float FALL_DETECTION_THRESHOLD = 30.0;      // Threshold for detecting stand-up (rise above this %)
 
 // System Constants
 const int SENSOR_SAMPLE_RATE_MS = 50;            // Sensor sampling rate
@@ -109,155 +109,6 @@ enum class SystemState {
     INPUT_PAUSED,
     CALIBRATION,
     ALARM
-};
-
-
-// ===== test/helpers\MockSensors.h =====
-
-#pragma once
-
-
-
-/**
- * Mock Force Sensor for Unit Testing
- * Allows manual control of sensor readings and state
- */
-class MockForceSensor : public IForceSensor {
-private:
-    float _mockPressure;
-    float _threshold;
-    bool _initialized;
-
-public:
-    MockForceSensor(float threshold = 15.0f) 
-        : _mockPressure(0.0f), _threshold(threshold), _initialized(false) {}
-
-    void init() override {
-        _initialized = true;
-    }
-
-    float getPressurePercentage() override {
-        return _mockPressure;
-    }
-
-    bool isOccupied() override {
-        return _mockPressure > _threshold;
-    }
-
-    // Test helper methods
-    void setMockPressure(float pressure) {
-        _mockPressure = pressure;
-    }
-
-    bool isInitialized() const {
-        return _initialized;
-    }
-};
-
-/**
- * Mock Nurse Input for Unit Testing
- * Allows simulation of button presses
- */
-class MockNurseInput : public INurseInput {
-private:
-    bool _shortPress;
-    bool _longPress;
-    bool _initialized;
-
-public:
-    MockNurseInput() 
-        : _shortPress(false), _longPress(false), _initialized(false) {}
-
-    void init() override {
-        _initialized = true;
-    }
-
-    void update() override {
-        // In mock, we manually set the press flags
-    }
-
-    bool isPressed() override {
-        return false;
-    }
-
-    bool wasShortPressed() override {
-        bool result = _shortPress;
-        _shortPress = false; // Clear flag after reading
-        return result;
-    }
-
-    bool wasLongPressed() override {
-        bool result = _longPress;
-        _longPress = false; // Clear flag after reading
-        return result;
-    }
-
-    // Test helper methods
-    void simulateShortPress() {
-        _shortPress = true;
-    }
-
-    void simulateLongPress() {
-        _longPress = true;
-    }
-
-    bool isInitialized() const {
-        return _initialized;
-    }
-};
-
-/**
- * Mock Alert System for Unit Testing
- * Tracks whether alarms were triggered/cleared
- */
-class MockAlertSystem : public IAlertSystem {
-private:
-    bool _initialized;
-    int _alarmTriggeredCount;
-    int _alarmClearedCount;
-    bool _currentAlarmState;
-
-public:
-    MockAlertSystem() 
-        : _initialized(false), _alarmTriggeredCount(0), 
-          _alarmClearedCount(0), _currentAlarmState(false) {}
-
-    void init() override {
-        _initialized = true;
-    }
-
-    void triggerFallAlarm() override {
-        _alarmTriggeredCount++;
-        _currentAlarmState = true;
-    }
-
-    void clearAlarm() override {
-        _alarmClearedCount++;
-        _currentAlarmState = false;
-    }
-
-    // Test helper methods
-    int getAlarmTriggeredCount() const {
-        return _alarmTriggeredCount;
-    }
-
-    int getAlarmClearedCount() const {
-        return _alarmClearedCount;
-    }
-
-    bool isAlarmActive() const {
-        return _currentAlarmState;
-    }
-
-    bool isInitialized() const {
-        return _initialized;
-    }
-
-    void resetCounters() {
-        _alarmTriggeredCount = 0;
-        _alarmClearedCount = 0;
-        _currentAlarmState = false;
-    }
 };
 
 
@@ -704,20 +555,14 @@ void FallDetector::handlePollingState() {
     
     if (occupied && pressure > FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
         Serial.println("Alert! Person detected on mat without supervision.");
-        _alert->triggerFallAlarm();
         transitionToState(SystemState::ALARM);
         return;
     }
 
-    if (_button->wasShortPressed()) {
-        Serial.println("Pause requested by nurse (short press)");
-        transitionToState(SystemState::INPUT_PAUSED);
-        return;
-    }
-    
+    // According to requirements: Long press → INPUT_PAUSED (pause for 2 mins)
     if (_button->wasLongPressed()) {
-        Serial.println("Calibration requested by nurse (long press)");
-        transitionToState(SystemState::CALIBRATION);
+        Serial.println("Pause requested by nurse (long press)");
+        transitionToState(SystemState::INPUT_PAUSED);
         return;
     }
 }
@@ -731,6 +576,14 @@ void FallDetector::handleAlarmState() {
 }
 
 void FallDetector::handlePauseState() {
+    // According to requirements: From INPUT_PAUSED, short press → CALIBRATION
+    if (_button->wasShortPressed()) {
+        Serial.println("Calibration requested by nurse (short press from pause)");
+        transitionToState(SystemState::CALIBRATION);
+        return;
+    }
+    
+    // If pause timer expires, return to POLLING
     if (isPauseDurationExpired()) {
         Serial.println("Pause expired, resuming monitoring");
         transitionToState(SystemState::POLLING);

@@ -8,19 +8,13 @@
 
 /**
  * Comprehensive Test Suite for CSE 3.5 Mat Fall Detection System
- * 
- * This test suite implements the complete testing plan from the requirements:
- * - Section 4.1: Use Case Test Scenarios (UC-1.1 through UC-7.1)
- * - Section 4.2: State Transition Tests (ST-1.1 through ST-8.1)
- * - Section 4.4: End-to-End (E2E) Testing (E2E-1.1 through E2E-4.1)
- * 
  * Test Environment: Uses mock implementations of hardware interfaces
  * (ForceSensor, NurseInput, AlertSystem) to enable pure unit testing
  * without physical hardware.
  */
 
 // ============================================================================
-// TEST FIXTURE SETUP - Common initialization for all tests
+// TEST FIXTURE SETUP
 // ============================================================================
 
 class FallDetectorTest : public ::testing::Test {
@@ -211,11 +205,8 @@ TEST_F(FallDetectorTest, UC_7_1_SystemShutdownShouldBePending) {
 }
 
 // ============================================================================
-// ============================================================================
 // SECTION 4.2: STATE TRANSITION TESTS (Unit Tests)
 // ============================================================================
-// ============================================================================
-// These tests specifically trace the logic in Section 3: Detailed System
 // State Transition Requirements to ensure the system follows the formal state machine
 
 /**
@@ -404,11 +395,8 @@ TEST_F(FallDetectorTest, ST_8_1_PollingShutdownShouldTransitionToSystemOff) {
 }
 
 // ============================================================================
-// ============================================================================
 // EDGE CASE & BOUNDARY TESTS
 // ============================================================================
-// ============================================================================
-// These tests validate system behavior at boundaries and in unusual conditions
 
 /**
  * EDGE-1: Pressure at Exact Threshold Boundary
@@ -588,9 +576,7 @@ TEST_F(FallDetectorTest, EDGE_10_CalibrationExactlyAtDurationShouldComplete) {
 }
 
 // ============================================================================
-// ============================================================================
 // ERROR HANDLING & INVALID INPUT TESTS
-// ============================================================================
 // ============================================================================
 
 // /**
@@ -714,9 +700,7 @@ TEST_F(FallDetectorTest, ERROR_7_ButtonPressWhileForceHighShouldClearAlarm) {
 }
 
 // ============================================================================
-// ============================================================================
 // STATE PERSISTENCE & CONSISTENCY TESTS
-// ============================================================================
 // ============================================================================
 
 /**
@@ -789,9 +773,7 @@ TEST_F(FallDetectorTest, STATE_4_CalibrationStateShouldRemainStableUntilTimerExp
 }
 
 // ============================================================================
-// ============================================================================
 // COMPLEX SCENARIO TESTS
-// ============================================================================
 // ============================================================================
 
 /**
@@ -936,9 +918,7 @@ TEST_F(FallDetectorTest, COMPLEX_6_AlertCountersShouldBeAccurate) {
 }
 
 // ============================================================================
-// ============================================================================
 // SECTION 4.4: END-TO-END (E2E) TESTING
-// ============================================================================
 // ============================================================================
 // These end-to-end tests validate the complete system flow, ensuring all
 // components (sensor polling, state transitions, and alerting) work together
