@@ -104,37 +104,35 @@ class TestParser:
         """Extract error messages for failed tests"""
         current_test = None
         error_lines = []
-        in_error_section = False
+        in_test_section = False
         
         for i, line in enumerate(self.lines):
-            # Start of a failed test details
-            if '[ RUN      ]' in line and any(t['name'] in line for t in self.failed_tests):
-                current_test = None
-                # Extract test name
-                match = re.search(r'\[ RUN      \] (\S+)', line)
-                if match:
-                    current_test = match.group(1)
+            # Start of a test - check if it's one that failed
+            run_match = re.search(r'\[\s*RUN\s+\]\s+(\S+)', line)
+            if run_match:
+                test_name = run_match.group(1)
+                # Check if this test is in our failed tests list
+                if any(t['name'] == test_name for t in self.failed_tests):
+                    current_test = test_name
                     error_lines = []
-                    in_error_section = True
+                    in_test_section = True
+                else:
+                    in_test_section = False
+                    current_test = None
             
-            # End of test (next test starts or summary begins)
-            elif in_error_section and (
-                '[ RUN      ]' in line or 
-                '[----------]' in line or 
-                '[==========]' in line
-            ):
+            # End of test section (when we hit FAILED or OK marker)
+            elif in_test_section and re.search(r'\[\s*(FAILED|OK)\s*\]', line):
                 if current_test and error_lines:
                     self.test_errors[current_test] = error_lines
-                in_error_section = False
+                in_test_section = False
                 current_test = None
                 error_lines = []
             
-            # Collect error content
-            elif in_error_section and current_test:
-                # Skip gtest-specific lines
-                if not any(x in line for x in ['[ RUN', '[OK]', '[FAILED]', '[---', '[===', 'Global test']):
-                    if line.strip():  # Non-empty line
-                        error_lines.append(line)
+            # Collect error content (lines between RUN and FAILED/OK)
+            elif in_test_section and current_test:
+                # Skip separator lines and empty lines
+                if not re.search(r'^\s*\[-+\]|^\s*\[=+\]', line) and line.strip():
+                    error_lines.append(line)
         
         # Don't forget the last test
         if current_test and error_lines:
@@ -222,10 +220,8 @@ class TestReporter:
                 errors = self.parser.test_errors[test_name]
                 if errors:
                     print(f"{Colors.DIM}    Error Details:{Colors.RESET}")
-                    for error_line in errors[:10]:  # Limit to first 10 lines
+                    for error_line in errors:  # Show all error lines
                         print(f"      {Colors.YELLOW}{error_line}{Colors.RESET}")
-                    if len(errors) > 10:
-                        print(f"      ... and {len(errors) - 10} more lines")
             print()
     
     def print_report(self) -> int:
