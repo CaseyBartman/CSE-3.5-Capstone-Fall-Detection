@@ -64,15 +64,10 @@ void FallDetector::handlePollingState() {
         return;
     }
 
-    if (_button->wasShortPressed()) {
-        Serial.println("Pause requested by nurse (short press)");
-        transitionToState(SystemState::INPUT_PAUSED);
-        return;
-    }
-    
+    // According to requirements: Long press → INPUT_PAUSED (pause for 2 mins)
     if (_button->wasLongPressed()) {
-        Serial.println("Calibration requested by nurse (long press)");
-        transitionToState(SystemState::CALIBRATION);
+        Serial.println("Pause requested by nurse (long press)");
+        transitionToState(SystemState::INPUT_PAUSED);
         return;
     }
 }
@@ -86,6 +81,14 @@ void FallDetector::handleAlarmState() {
 }
 
 void FallDetector::handlePauseState() {
+    // According to requirements: From INPUT_PAUSED, short press → CALIBRATION
+    if (_button->wasShortPressed()) {
+        Serial.println("Calibration requested by nurse (short press from pause)");
+        transitionToState(SystemState::CALIBRATION);
+        return;
+    }
+    
+    // If pause timer expires, return to POLLING
     if (isPauseDurationExpired()) {
         Serial.println("Pause expired, resuming monitoring");
         transitionToState(SystemState::POLLING);

@@ -176,7 +176,7 @@ public:
 
     /**
      * Simulate patient standing up from mat
-     * Sets sensor pressure to "unoccupied" level (triggers fall detection)
+     * Sets sensor pressure to "occupied" level (triggers fall detection)
      */
     void setPatientStandingUp(float pressure = 100.0f) {
         _sensor->setMockPressure(pressure);
@@ -198,7 +198,7 @@ public:
         setPatientsitting(40.0f);
         _detector->update();  // Detect occupancy
         
-        setPatientStandingUp(3.0f);
+        setPatientStandingUp(100.0f);
         _detector->update();  // Trigger alarm
     }
 
@@ -233,4 +233,3 @@ public:
         }
     }
 };
-

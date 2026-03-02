@@ -21,17 +21,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
-
-# Detect platform and set TEST_BINARY path accordingly
-# Windows MSBuild puts binaries in Debug/Release subdirectories
-if [ -f "$BUILD_DIR/Debug/fall_detection_tests.exe" ]; then
-    TEST_BINARY="$BUILD_DIR/Debug/fall_detection_tests.exe"
-elif [ -f "$BUILD_DIR/Release/fall_detection_tests.exe" ]; then
-    TEST_BINARY="$BUILD_DIR/Release/fall_detection_tests.exe"
-else
-    # Fallback to Unix-style path (for non-Windows or Makefile-based builds)
-    TEST_BINARY="$BUILD_DIR/fall_detection_tests"
-fi
+TEST_BINARY=""
 
 CLEAN=false
 VERBOSE=false
@@ -133,13 +123,26 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}  ✓ Build successful${NC}"
 
+# Detect test binary path after successful build
+# Windows MSBuild puts binaries in Debug/Release subdirectories
+if [ -f "$BUILD_DIR/Debug/fall_detection_tests.exe" ]; then
+    TEST_BINARY="$BUILD_DIR/Debug/fall_detection_tests.exe"
+elif [ -f "$BUILD_DIR/Release/fall_detection_tests.exe" ]; then
+    TEST_BINARY="$BUILD_DIR/Release/fall_detection_tests.exe"
+elif [ -f "$BUILD_DIR/fall_detection_tests" ]; then
+    # Unix-style path (for non-Windows or Makefile-based builds)
+    TEST_BINARY="$BUILD_DIR/fall_detection_tests"
+else
+    echo -e "${RED}ERROR: Test binary not found after successful build${NC}"
+    exit 1
+fi
+
 # Run tests
 echo ""
 echo -e "${YELLOW}Running tests...${NC}"
 echo ""
 
 cd "$SCRIPT_DIR"
-
 # Check if Python is available for better output formatting
 # Note: Check 'python' before 'python3' because python3 may be a Windows Store alias
 PYTHON_CMD=""

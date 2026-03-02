@@ -142,57 +142,68 @@ class TestParser:
 class TestReporter:
     """Formats and displays test results"""
     
-    # Map test names to their logical categories
-    TEST_CATEGORIES = {
-        'Initialization': [
-            'InitializationCreatesAllComponents',
-            'SystemStartsInIdleState',
-            'AllMocksAreInitialized',
-        ],
-        'State Transitions': [
-            'IdleToPollingTransition',
-            'PollingToAlarmOnFallDetection',
-            'AlarmToPolling_OnButtonPress',
-            'PollingToInputPaused_OnShortPress',
-            'PollingToCalibration_OnLongPress',
-            'InputPausedToPolling_OnTimeout',
-            'CalibrationToPolling_OnTimeout',
-        ],
-        'Fall Detection Logic': [
-            'FallDetectedWhenPressureRisesAboveThreshold',
-            'AlarmOnGradualPressureChange',
-            'AlarmTriggerCountIncrementsCorrectly',
-            'AlarmClearedOnButtonPress',
-        ],
-        'Button Handling': [
-            'ShortPressClearsAlarm',
-            'ShortPressPausesMonitoring',
-            'LongPressTriggerCalibration',
-            'MultipleButtonPressesHandleSequentially',
-        ],
-        'Timing & Expiration': [
-            'PauseDurationExpires_AtExactTime',
-            'CalibrationDurationExpires_AtExactTime',
-            'PauseDoesNotExpireEarly',
-            'CalibrationDoesNotExpireEarly',
-        ],
-        'Integration & Edge Cases': [
-            'StateTransitionSequence',
-            'ResetBetweenTests',
-            'AlertCountersResetOnNewDetector',
-        ],
-    }
+    @staticmethod
+    def extract_test_prefix(test_name: str) -> str:
+        """
+        Extract the category prefix from a test name.
+        Test names follow pattern: TestSuite.TEST_PREFIX_DescriptiveName
+        Returns the prefix (UC, ST, E2E, EDGE, ERROR, STATE, COMPLEX, etc.)
+        """
+        # Extract just the test method name (after the dot)
+        test_method = test_name.split('.')[1] if '.' in test_name else test_name
+        
+        # Find the first underscore to get the prefix
+        if '_' in test_method:
+            prefix = test_method.split('_')[0]
+            return prefix
+        
+        return None
+    
+    @staticmethod
+    def get_category_name(prefix: str) -> str:
+        """Convert test prefix to human-readable category name"""
+        category_map = {
+            'UC': 'Use Cases (Section 4.1)',
+            'ST': 'State Transitions (Section 4.2)',
+            'E2E': 'End-to-End Testing (Section 4.4)',
+            'EDGE': 'Edge Cases & Boundaries',
+            'ERROR': 'Error Handling & Invalid Input',
+            'STATE': 'State Persistence & Consistency',
+            'COMPLEX': 'Complex Scenarios',
+        }
+        return category_map.get(prefix, 'Other Tests')
     
     def __init__(self, parser: TestParser):
         self.parser = parser
+        # Build categories dynamically from tests
+        self.test_categories = self._build_categories()
+    
+    def _build_categories(self) -> Dict[str, list]:
+        """
+        Dynamically build category mapping from test names.
+        Returns dict mapping category names to list of prefixes.
+        """
+        categories = {
+            'Use Cases (Section 4.1)': ['UC'],
+            'State Transitions (Section 4.2)': ['ST'],
+            'End-to-End Testing (Section 4.4)': ['E2E'],
+            'Edge Cases & Boundaries': ['EDGE'],
+            'Error Handling & Invalid Input': ['ERROR'],
+            'State Persistence & Consistency': ['STATE'],
+            'Complex Scenarios': ['COMPLEX'],
+            'Uncategorized': [],
+        }
+        return categories
     
     def get_test_category(self, test_name: str) -> str:
-        """Get the category for a test based on its name"""
-        test_method = test_name.split('.')[1] if '.' in test_name else test_name
-        for category, tests in self.TEST_CATEGORIES.items():
-            if test_method in tests:
-                return category
-        return 'Uncategorized'
+        """Get the category for a test based on its name prefix"""
+        prefix = self.extract_test_prefix(test_name)
+        
+        if prefix is None:
+            return 'Uncategorized'
+        
+        category_name = self.get_category_name(prefix)
+        return category_name
     
     def print_header(self) -> None:
         """Print test run header"""
@@ -231,7 +242,7 @@ class TestReporter:
         
         print(f"{Colors.BOLD}{Colors.GREEN}✓ PASSED TESTS ({len(self.parser.passed_tests)}):{Colors.RESET}\n")
         
-        # Group tests by category
+        # Group tests by category dynamically
         tests_by_category = {}
         for test in self.parser.passed_tests:
             category = self.get_test_category(test['name'])
@@ -239,8 +250,20 @@ class TestReporter:
                 tests_by_category[category] = []
             tests_by_category[category].append(test)
         
-        # Print each category with its tests
-        for category in self.TEST_CATEGORIES.keys():
+        # Print each category with its tests in a sensible order
+        category_order = [
+            'Use Cases (Section 4.1)',
+            'State Transitions (Section 4.2)',
+            'End-to-End Testing (Section 4.4)',
+            'Edge Cases & Boundaries',
+            'Error Handling & Invalid Input',
+            'State Persistence & Consistency',
+            'Complex Scenarios',
+            'Other Tests',
+            'Uncategorized',
+        ]
+        
+        for category in category_order:
             if category not in tests_by_category:
                 continue
             
@@ -253,18 +276,6 @@ class TestReporter:
                 print(f"      └─ {test_name} ({duration}ms)")
             
             print()  # Blank line between categories
-        
-        # Print uncategorized tests if any
-        if 'Uncategorized' in tests_by_category:
-            tests = tests_by_category['Uncategorized']
-            print(f"  {Colors.YELLOW}?{Colors.RESET} {Colors.BOLD}Uncategorized{Colors.RESET} ({len(tests)} test{'s' if len(tests) != 1 else ''})")
-            
-            for test in tests:
-                test_name = test['name'].split('.')[1] if '.' in test['name'] else test['name']
-                duration = test['duration']
-                print(f"      └─ {test_name} ({duration}ms)")
-            
-            print()
         
         print()
     
@@ -285,7 +296,19 @@ class TestReporter:
         
         # Print each category with its failed tests
         test_counter = 1
-        for category in self.TEST_CATEGORIES.keys():
+        category_order = [
+            'Use Cases (Section 4.1)',
+            'State Transitions (Section 4.2)',
+            'End-to-End Testing (Section 4.4)',
+            'Edge Cases & Boundaries',
+            'Error Handling & Invalid Input',
+            'State Persistence & Consistency',
+            'Complex Scenarios',
+            'Other Tests',
+            'Uncategorized',
+        ]
+        
+        for category in category_order:
             if category not in tests_by_category:
                 continue
             
@@ -313,30 +336,6 @@ class TestReporter:
                 test_counter += 1
             
             print()  # Blank line between categories
-        
-        # Print uncategorized tests if any
-        if 'Uncategorized' in tests_by_category:
-            tests = tests_by_category['Uncategorized']
-            print(f"  {Colors.YELLOW}{Colors.BOLD}Uncategorized{Colors.RESET} ({len(tests)} failed):")
-            
-            for test in tests:
-                test_name = test['name']
-                suite_name = test_name.split('.')[0]
-                test_method = test_name.split('.')[1]
-                
-                print(f"    {Colors.RED}{Colors.BOLD}[{test_counter}] {test_name}{Colors.RESET}")
-                print(f"        Suite:   {suite_name}")
-                print(f"        Method:  {test_method}")
-                
-                # Print error details if available
-                if test_name in self.parser.test_errors:
-                    errors = self.parser.test_errors[test_name]
-                    if errors:
-                        print(f"        {Colors.DIM}Error Details:{Colors.RESET}")
-                        for error_line in errors:
-                            print(f"          {Colors.YELLOW}{error_line}{Colors.RESET}")
-                print()
-                test_counter += 1
     
     def print_report(self) -> int:
         """Print complete test report and return exit code"""

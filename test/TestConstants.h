@@ -18,7 +18,7 @@ const float TEST_PRESSURE_ABOVE_THRESHOLD = 50.0f;              // Well above FA
 
 // Timing test values
 const unsigned long TEST_TIME_BEFORE_EXPIRY = 1000;             // 1 second before timeout
-const unsigned long TEST_OCCUPIED_STATE_INITIAL = 40.0f;        // Initial occupied pressure
+const float TEST_OCCUPIED_STATE_INITIAL = 40.0f;                // Initial occupied pressure
 
 // Validation helpers
 static_assert(TEST_PRESSURE_BELOW_THRESHOLD < FALL_DETECTION_THRESHOLD, 
