@@ -7,6 +7,10 @@
     #include "drivers/sim/WokwiPotentiometer.cpp"
     #include "drivers/sim/WokwiButton.cpp"
     #include "drivers/sim/SerialConsoleAlert.cpp"
+#elif defined(REAL_BASIC)
+    #include "drivers/real-basic/RealPotentiometer.h"
+    #include "drivers/real-basic/PhysicalButton.h"
+    #include "drivers/real-basic/LEDAlert.h"
 #else
     #include "drivers/real/TekscanA502.cpp"
     #include "drivers/real/BlueCharmBLE.cpp"
@@ -29,6 +33,12 @@ void setup() {
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new WokwiButton(15);
         auto* alert  = new SerialConsoleAlert();
+    #elif defined(REAL_BASIC)
+        Serial.println("Running in REAL-BASIC mode (Random sensor + LED + Button)");
+        /* Physical pins(replace when changed)*/
+        auto* sensor = new RealPotentiometer(14, DEFAULT_PRESSURE_THRESHOLD);
+        auto* button = new PhysicalButton(13); 
+        auto* alert  = new LEDAlert(12);   
     #else
         Serial.println("Running in PRODUCTION mode (Real Hardware)");
         auto* sensor = new TekscanA502(34, DEFAULT_PRESSURE_THRESHOLD);
