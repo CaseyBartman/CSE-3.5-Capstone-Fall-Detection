@@ -136,30 +136,34 @@ echo -e "${GREEN}  ✓ Build successful${NC}"
 # Run tests
 echo ""
 echo -e "${YELLOW}Running tests...${NC}"
-echo -e "${CYAN}─────────────────────────────────────────────────────────────${NC}"
 echo ""
 
 cd "$SCRIPT_DIR"
-"$TEST_BINARY"
-TEST_RESULT=$?
 
-echo ""
-echo -e "${CYAN}─────────────────────────────────────────────────────────────${NC}"
+# Check if Python is available for better output formatting
+# Note: Check 'python' before 'python3' because python3 may be a Windows Store alias
+PYTHON_CMD=""
+if command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+elif command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+fi
 
-# Display results
-echo ""
-if [ $TEST_RESULT -eq 0 ]; then
-    echo -e "${GREEN}✓ All tests passed!${NC}"
-    echo ""
-    echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}   Test Suite Complete - Success${NC}"
-    echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
+if [ -n "$PYTHON_CMD" ] && [ -f "$SCRIPT_DIR/parse_tests.py" ]; then
+    # Use Python parser for clean formatted output
+    $PYTHON_CMD "$SCRIPT_DIR/parse_tests.py" "$TEST_BINARY"
+    TEST_RESULT=$?
 else
-    echo -e "${RED}✗ Tests failed with exit code: $TEST_RESULT${NC}"
+    # Fallback to direct execution
+    if [ -z "$PYTHON_CMD" ]; then
+        echo -e "${YELLOW}Note: Python not found, using default output format${NC}"
+    fi
+    echo -e "${CYAN}─────────────────────────────────────────────────────────────${NC}"
     echo ""
-    echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${RED}   Test Suite Complete - Failures Detected${NC}"
-    echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
+    "$TEST_BINARY"
+    TEST_RESULT=$?
+    echo ""
+    echo -e "${CYAN}─────────────────────────────────────────────────────────────${NC}"
 fi
 
 exit $TEST_RESULT

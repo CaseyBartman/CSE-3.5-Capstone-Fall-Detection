@@ -178,7 +178,7 @@ public:
      * Simulate patient standing up from mat
      * Sets sensor pressure to "unoccupied" level (triggers fall detection)
      */
-    void setPatientStandingUp(float pressure = 0.0f) {
+    void setPatientStandingUp(float pressure = 100.0f) {
         _sensor->setMockPressure(pressure);
     }
 
