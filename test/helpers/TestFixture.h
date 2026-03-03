@@ -10,27 +10,6 @@
  * 
  * Provides common setup and teardown for all FallDetector tests.
  * Ensures consistent initialization and cleanup between test runs.
- * 
- * Usage in test files:
- * 
- *   // Global variables (declared once at file level)
- *   static TestFixture* fixture;
- *   
- *   void setUp(void) {
- *       fixture = new TestFixture();
- *       fixture->init();
- *   }
- *   
- *   void tearDown(void) {
- *       fixture->cleanup();
- *       delete fixture;
- *   }
- *   
- *   void test_example() {
- *       fixture->getSensor()->setMockPressure(40.0f);
- *       fixture->getDetector()->update();
- *       // Make assertions...
- *   }
  */
 class TestFixture {
 private:
@@ -47,7 +26,6 @@ public:
 
     /**
      * Initialize all mocks and the system under test
-     * Call this in each test's setUp() function
      */
     void init() {
         // Create mocks
@@ -66,7 +44,6 @@ public:
 
     /**
      * Clean up all allocated resources
-     * Call this in each test's tearDown() function
      */
     void cleanup() {
         if (_detector != nullptr) {
@@ -99,8 +76,6 @@ public:
         cleanup();
     }
 
-    // ============= Accessors for mocks and system under test =============
-
     MockForceSensor* getSensor() const {
         return _sensor;
     }
@@ -121,53 +96,32 @@ public:
         return _time;
     }
 
-    // ============= Convenience helper methods =============
-
-    /**
-     * Verify system is in IDLE state after init
-     */
     bool isInIdleState() const {
         return _detector->getCurrentState() == SystemState::IDLE;
     }
 
-    /**
-     * Verify system is in POLLING state
-     */
     bool isInPollingState() const {
         return _detector->getCurrentState() == SystemState::POLLING;
     }
 
-    /**
-     * Verify system is in ALARM state
-     */
     bool isInAlarmState() const {
         return _detector->getCurrentState() == SystemState::ALARM;
     }
 
-    /**
-     * Verify system is in INPUT_PAUSED state
-     */
     bool isInPauseState() const {
         return _detector->getCurrentState() == SystemState::INPUT_PAUSED;
     }
 
-    /**
-     * Verify system is in CALIBRATION state
-     */
     bool isInCalibrationState() const {
         return _detector->getCurrentState() == SystemState::CALIBRATION;
     }
 
-    /**
-     * Transition system from IDLE to POLLING
-     * Simulates system readiness check
-     */
+
     void transitionToPolling() {
-        _detector->update();  // IDLE -> POLLING
+        _detector->update();
     }
 
     /**
-     * Simulate patient sitting on mat
      * Sets sensor pressure to "occupied" level
      */
     void setPatientsitting(float pressure = 40.0f) {
@@ -175,7 +129,6 @@ public:
     }
 
     /**
-     * Simulate patient standing up from mat
      * Sets sensor pressure to "occupied" level (triggers fall detection)
      */
     void setPatientStandingUp(float pressure = 100.0f) {
@@ -184,7 +137,6 @@ public:
 
     /**
      * Simulate mat being empty
-     * Sets sensor pressure to zero/minimal
      */
     void setMatEmpty(float pressure = 0.0f) {
         _sensor->setMockPressure(pressure);
@@ -203,7 +155,7 @@ public:
     }
 
     /**
-     * Helper: Simulate pause duration expiration
+     * Simulate pause duration expiration
      */
     void advanceTimeAndWaitForPauseExpiry() {
         _time->advanceMs(PAUSE_DURATION_MS);
@@ -211,7 +163,7 @@ public:
     }
 
     /**
-     * Helper: Simulate calibration duration expiration
+     * Simulate calibration duration expiration
      */
     void advanceTimeAndWaitForCalibrationExpiry() {
         _time->advanceMs(CALIB_DURATION_MS);
