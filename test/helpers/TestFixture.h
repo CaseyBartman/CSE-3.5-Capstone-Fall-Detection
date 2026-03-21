@@ -185,3 +185,17 @@ public:
         }
     }
 };
+
+    // Google Test pretty-printer for SystemState
+    #include <ostream>
+    inline void PrintTo(SystemState state, std::ostream* os) {
+        switch (state) {
+            case SystemState::SYSTEM_OFF:     *os << "SYSTEM_OFF"; break;
+            case SystemState::IDLE:           *os << "IDLE"; break;
+            case SystemState::POLLING:        *os << "POLLING"; break;
+            case SystemState::INPUT_PAUSED:   *os << "INPUT_PAUSED"; break;
+            case SystemState::CALIBRATION:    *os << "CALIBRATION"; break;
+            case SystemState::ALARM:          *os << "ALARM"; break;
+            default:                          *os << "Unknown SystemState"; break;
+        }
+    }

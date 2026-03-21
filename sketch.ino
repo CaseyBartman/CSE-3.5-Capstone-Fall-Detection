@@ -156,6 +156,9 @@ public:
 
 
 #include <Arduino.h>
+#include <iostream>		
+#include <thread> // Required for std::this_thread::sleep_for		
+#include <chrono>
 
 class BlueCharmBLE : public INurseInput {
 private:
@@ -558,11 +561,17 @@ void FallDetector::handlePollingState() {
         transitionToState(SystemState::ALARM);
         return;
     }
-
-    // According to requirements: Long press → INPUT_PAUSED (pause for 2 mins)
-    if (_button->wasLongPressed()) {
-        Serial.println("Pause requested by nurse (long press)");
+    
+    // According to requirements: Short press → INPUT_PAUSED (pause for 2 mins)
+    if (_button->wasShortPressed()) {
+        Serial.println("Pause requested by nurse (short press)");
         transitionToState(SystemState::INPUT_PAUSED);
+        return;
+    }
+
+    if (_button->wasLongPressed()) {
+        Serial.println("Calibration requested by nurse (long press)");
+        transitionToState(SystemState::CALIBRATION);
         return;
     }
 }
@@ -594,12 +603,13 @@ void FallDetector::handleCalibrationState() {
     float pressure = _sensor->getPressurePercentage();
     
     //This is a very basic implementation- not at all reflective of how we should handle the calibration, but should work for a rough draft simulation
-    if (isCalibrationDurationExpired()) {
+    if (isCalibrationDurationExpired() || _button->wasShortPressed()) {
         // Save new threshold (current pressure reading)? 
         _calibrationThreshold = pressure;
         Serial.print("Calibration complete - New threshold: ");
         Serial.print(_calibrationThreshold);
         Serial.println("%");
+        std::this_thread::sleep_for(std::chrono::seconds(3)); //Wait so the state switch isn't immediate
         transitionToState(SystemState::POLLING);
     }
 }

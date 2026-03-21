@@ -1,5 +1,8 @@
 #include "logic/FallDetector.h"
 #include <Arduino.h>
+#include <iostream>		
+#include <thread> // Required for std::this_thread::sleep_for		
+#include <chrono>
 
 FallDetector::FallDetector(IForceSensor* sensor, INurseInput* button, IAlertSystem* alert)
     : _sensor(sensor), _button(button), _alert(alert),
@@ -58,18 +61,25 @@ void FallDetector::handlePollingState() {
     float pressure = _sensor->getPressurePercentage();
     bool occupied = _sensor->isOccupied();
     
-    if (occupied && pressure > FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
+    if (occupied && pressure >= FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
         Serial.println("Alert! Person detected on mat without supervision.");
         transitionToState(SystemState::ALARM);
         return;
     }
 
-    // According to requirements: Long press → INPUT_PAUSED (pause for 2 mins)
-    if (_button->wasLongPressed()) {
-        Serial.println("Pause requested by nurse (long press)");
+    // According to requirements: Short press → INPUT_PAUSED (pause for 2 mins)
+    if (_button->wasShortPressed()) {
+        Serial.println("Pause requested by nurse (short press)");
         transitionToState(SystemState::INPUT_PAUSED);
         return;
     }
+
+    //THIS BEHAVIOR IS UNDEFINED.... what do we think?
+    // if (_button->wasLongPressed()) {
+    //     Serial.println("Calibration requested by nurse (long press)");
+    //     transitionToState(SystemState::CALIBRATION);
+    //     return;
+    // }
 }
 
 void FallDetector::handleAlarmState() {
@@ -99,12 +109,13 @@ void FallDetector::handleCalibrationState() {
     float pressure = _sensor->getPressurePercentage();
     
     //This is a very basic implementation- not at all reflective of how we should handle the calibration, but should work for a rough draft simulation
-    if (isCalibrationDurationExpired()) {
+    if (isCalibrationDurationExpired() || _button->wasShortPressed()) {
         // Save new threshold (current pressure reading)? 
         _calibrationThreshold = pressure;
         Serial.print("Calibration complete - New threshold: ");
         Serial.print(_calibrationThreshold);
         Serial.println("%");
+        std::this_thread::sleep_for(std::chrono::seconds(3)); //Wait so the state switch isn't immediate
         transitionToState(SystemState::POLLING);
     }
 }

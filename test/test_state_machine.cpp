@@ -111,7 +111,7 @@ TEST_F(FallDetectorTest, UC_4_1_TemporaryPauseShouldEnterInputPaused) {
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
     // When: Nurse presses and holds button (long pause)
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     
     // Then: System transitions to INPUT_PAUSED
@@ -127,7 +127,7 @@ TEST_F(FallDetectorTest, UC_4_1_TemporaryPauseShouldEnterInputPaused) {
 TEST_F(FallDetectorTest, UC_4_2_ResumePollShouldHappenOnTimerExpiry) {
     // Given: System is in INPUT_PAUSED state
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -147,7 +147,7 @@ TEST_F(FallDetectorTest, UC_4_2_ResumePollShouldHappenOnTimerExpiry) {
 TEST_F(FallDetectorTest, UC_5_1_CalibrationStartShouldHappenFromInputPaused) {
     // Given: System is in INPUT_PAUSED state
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -168,7 +168,7 @@ TEST_F(FallDetectorTest, UC_5_1_CalibrationStartShouldHappenFromInputPaused) {
 TEST_F(FallDetectorTest, UC_6_1_CalibrationCompletionShouldSaveThreshold) {
     // Given: System is in CALIBRATION state
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
@@ -255,7 +255,7 @@ TEST_F(FallDetectorTest, ST_3_1_PollingLongPressShouldEnterInputPaused) {
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
     // When: Nurse performs long button press
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     
     // Then: System transitions to INPUT_PAUSED
@@ -272,7 +272,7 @@ TEST_F(FallDetectorTest, ST_3_1_PollingLongPressShouldEnterInputPaused) {
 TEST_F(FallDetectorTest, ST_4_1_InputPausedShouldReturnToPollingOnTimerExpiry) {
     // Given: System is in INPUT_PAUSED state
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -293,7 +293,7 @@ TEST_F(FallDetectorTest, ST_4_1_InputPausedShouldReturnToPollingOnTimerExpiry) {
 TEST_F(FallDetectorTest, ST_4_2_InputPausedShortPressShouldEnterCalibration) {
     // Given: System is in INPUT_PAUSED state
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -315,7 +315,7 @@ TEST_F(FallDetectorTest, ST_4_2_InputPausedShortPressShouldEnterCalibration) {
 TEST_F(FallDetectorTest, ST_5_1_CalibrationShouldReturnToPollingOnTimerExpiry) {
     // Given: System is in CALIBRATION state
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
@@ -505,7 +505,7 @@ TEST_F(FallDetectorTest, EDGE_7_LongPressThenShortPressShouldEnterCalibration) {
     fixture->transitionToPolling();
     
     // Long press first
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -544,7 +544,7 @@ TEST_F(FallDetectorTest, EDGE_8_MultipleAlarmsInSequenceShouldCountCorrectly) {
  */
 TEST_F(FallDetectorTest, EDGE_9_PauseExactlyAtDurationShouldExpire) {
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -561,7 +561,7 @@ TEST_F(FallDetectorTest, EDGE_9_PauseExactlyAtDurationShouldExpire) {
  */
 TEST_F(FallDetectorTest, EDGE_10_CalibrationExactlyAtDurationShouldComplete) {
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
@@ -609,7 +609,6 @@ TEST_F(FallDetectorTest, ERROR_2_LongPressInAlarmStateShouldBeIgnored) {
     // Should remain in ALARM (long press not supported in ALARM)
     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::ALARM);
 }
-
 /**
  * ERROR-3: Multiple Short Presses in ALARM State
  */
@@ -619,6 +618,7 @@ TEST_F(FallDetectorTest, ERROR_3_MultipleShortPressesInAlarmShouldHandleSequenti
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::ALARM);
     
     // Multiple short presses
+    fixture->setMatEmpty();
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
@@ -634,7 +634,7 @@ TEST_F(FallDetectorTest, ERROR_3_MultipleShortPressesInAlarmShouldHandleSequenti
  */
 TEST_F(FallDetectorTest, ERROR_4_NoInputDuringCalibrationShouldWaitForTimer) {
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
@@ -651,7 +651,7 @@ TEST_F(FallDetectorTest, ERROR_4_NoInputDuringCalibrationShouldWaitForTimer) {
  */
 TEST_F(FallDetectorTest, ERROR_5_ForceSpikesDuringCalibrationShouldNotExitEarly) {
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
@@ -737,7 +737,7 @@ TEST_F(FallDetectorTest, STATE_2_AlarmStateShouldRemainStableUntilButtonPressed)
  */
 TEST_F(FallDetectorTest, STATE_3_PauseStateShouldRemainStableWithoutTrigger) {
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -756,7 +756,7 @@ TEST_F(FallDetectorTest, STATE_3_PauseStateShouldRemainStableWithoutTrigger) {
  */
 TEST_F(FallDetectorTest, STATE_4_CalibrationStateShouldRemainStableUntilTimerExpires) {
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
@@ -785,7 +785,7 @@ TEST_F(FallDetectorTest, COMPLEX_1_FullWorkflowShouldHandleInterruptions) {
     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
     // Attempt pause
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -815,7 +815,7 @@ TEST_F(FallDetectorTest, COMPLEX_2_PauseExpiryDuringForceShouldTransitionCorrect
     fixture->transitionToPolling();
     
     // Enter pause
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -839,7 +839,7 @@ TEST_F(FallDetectorTest, COMPLEX_3_MultipleCalibrationsInSequenceShouldSucceed) 
     
     for (int i = 0; i < 3; i++) {
         // Pause
-        fixture->getButton()->simulateLongPress();
+        fixture->getButton()->simulateShortPress();
         fixture->getDetector()->update();
         EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
         
@@ -878,7 +878,7 @@ TEST_F(FallDetectorTest, COMPLEX_4_StressTestManyUpdatesShouldNotCrash) {
  */
 TEST_F(FallDetectorTest, COMPLEX_5_TimerBoundaryBehaviorShouldBeConsistent) {
     fixture->transitionToPolling();
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -978,7 +978,7 @@ TEST_F(FallDetectorTest, E2E_2_1_PauseShouldIgnoreFallDuringPauseResume) {
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
     // Step 1: Nurse performs long press to pause
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     int alarmCountBefore = fixture->getAlert()->getAlarmTriggeredCount();
@@ -1019,7 +1019,7 @@ TEST_F(FallDetectorTest, E2E_3_1_CalibrationMonitoringShutdownShouldWorkCorrectl
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
     // Step 1: Nurse performs long press to enter INPUT_PAUSED
-    fixture->getButton()->simulateLongPress();
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
@@ -1059,12 +1059,12 @@ TEST_F(FallDetectorTest, E2E_4_1_CalibrationAbortedWrongInputShouldIgnoreSecondL
     fixture->transitionToPolling();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    // Step 1: First long press - enters INPUT_PAUSED
-    fixture->getButton()->simulateLongPress();
+    // Step 1: First short press - enters INPUT_PAUSED
+    fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
     
-    // Step 2: Second long press while in INPUT_PAUSED (should be ignored)
+    // Step 2: Long press while in INPUT_PAUSED (should be ignored)
     fixture->getButton()->simulateLongPress();
     fixture->getDetector()->update();
     
