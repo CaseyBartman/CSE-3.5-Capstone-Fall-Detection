@@ -102,15 +102,15 @@ TEST_F(FallDetectorTest, UC_3_1_AlarmAcknowledgmentShouldClearAlert) {
 /**
  * UC-4.1: Temporary Input Pause
  * Use Case: Temporary Input Pause
- * Scenario: While in the POLLING state, nurse presses and holds the button (long pause)
+ * Scenario: While in the POLLING state, nurse presses the button (short press)
  * Expected Result: System transitions from POLLING to INPUT_PAUSED. Execute pauseLogic() (for 2 mins)
  */
-TEST_F(FallDetectorTest, UC_4_1_TemporaryPauseShouldEnterInputPaused) {
+TEST_F(FallDetectorTest, UC_4_1_TemporaryPauseShortPressShouldEnterInputPaused) {
     // Given: System is in POLLING state
     fixture->transitionToPolling();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    // When: Nurse presses and holds button (long pause)
+    // When: Nurse presses button (short press)
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     
@@ -141,10 +141,10 @@ TEST_F(FallDetectorTest, UC_4_2_ResumePollShouldHappenOnTimerExpiry) {
 /**
  * UC-5.1: Calibration Start
  * Use Case: Calibration/Zeroing
- * Scenario: While in INPUT_PAUSED state, nurse presses button once (short press)
+ * Scenario: While in INPUT_PAUSED state, nurse presses the button (short press)
  * Expected Result: System transitions from INPUT_PAUSED to CALIBRATION. Start zeroing sequence
  */
-TEST_F(FallDetectorTest, UC_5_1_CalibrationStartShouldHappenFromInputPaused) {
+TEST_F(FallDetectorTest, UC_5_1_CalibrationStartShortPressShouldHappenFromInputPaused) {
     // Given: System is in INPUT_PAUSED state
     fixture->transitionToPolling();
     fixture->getButton()->simulateShortPress();
@@ -245,16 +245,16 @@ TEST_F(FallDetectorTest, ST_2_1_IdleShouldTransitionToPollingOnReadiness) {
 /**
  * ST-3.1: Polling to Input Paused Transition
  * Current State: POLLING
- * Input/Trigger: Nurse presses hold button
+ * Input/Trigger: Nurse presses button (short press)
  * New State (Expected): INPUT_PAUSED
  * Logic/Output Action (Expected): pauseLogic() (for 2 mins)
  */
-TEST_F(FallDetectorTest, ST_3_1_PollingLongPressShouldEnterInputPaused) {
+TEST_F(FallDetectorTest, ST_3_1_PollingShortPressShouldEnterInputPaused) {
     // Given: System is in POLLING state
     fixture->transitionToPolling();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    // When: Nurse performs long button press
+    // When: Nurse performs short button press
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     
@@ -286,7 +286,7 @@ TEST_F(FallDetectorTest, ST_4_1_InputPausedShouldReturnToPollingOnTimerExpiry) {
 /**
  * ST-4.2: Input Paused to Calibration Transition
  * Current State: INPUT_PAUSED
- * Input/Trigger: Button pressed once (short press)
+ * Input/Trigger: Nurse presses button (short press)
  * New State (Expected): CALIBRATION
  * Logic/Output Action (Expected): Start zeroing sequence
  */
@@ -499,12 +499,12 @@ TEST_F(FallDetectorTest, EDGE_5_ZeroPressureValueShouldRemainInPolling) {
 // }
 
 /**
- * EDGE-7: Long Press Followed Immediately by Short Press
+ * EDGE-7: Short Press Followed Immediately by Short Press
  */
-TEST_F(FallDetectorTest, EDGE_7_LongPressThenShortPressShouldEnterCalibration) {
+TEST_F(FallDetectorTest, EDGE_7_ShortPressThenShortPressShouldEnterCalibration) {
     fixture->transitionToPolling();
     
-    // Long press first
+    // Short press first
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
@@ -964,10 +964,10 @@ TEST_F(FallDetectorTest, E2E_1_1_FullCycleShouldBootAlarmAcknowledge) {
  * E2E-2.1: Pause, Fall During Pause, Resume
  * Initial State: POLLING
  * Sequence of Actions:
- *   1. Nurse presses and holds button (long pause)
+ *   1. Nurse presses button (short press)
  *   2. While in INPUT_PAUSED, simulate patient stand-up (detectedForce > THRESHOLD)
  *   3. Wait for 2-minute timer to expire
- * 
+
  * Final Expected State & Output:
  * - Final State: POLLING
  * - Output: pauseLogic() executed. No alarm message sent during pause. Monitoring resumes
@@ -977,7 +977,7 @@ TEST_F(FallDetectorTest, E2E_2_1_PauseShouldIgnoreFallDuringPauseResume) {
     fixture->transitionToPolling();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    // Step 1: Nurse performs long press to pause
+    // Step 1: Nurse performs short press to pause
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
@@ -1002,15 +1002,15 @@ TEST_F(FallDetectorTest, E2E_2_1_PauseShouldIgnoreFallDuringPauseResume) {
  * E2E-3.1: Calibration, Monitoring, Shutdown
  * Initial State: POLLING
  * Sequence of Actions:
- *   1. Nurse presses and holds button (long pause) -> State: INPUT_PAUSED
- *   2. Nurse presses button once (short press) -> State: CALIBRATION
+ *   1. Nurse presses button (short press) -> State: INPUT_PAUSED
+ *   2. Nurse presses button (short press) -> State: CALIBRATION
  *   3. Wait for CALIB_DURATION_MS timer to expire -> State: POLLING
  *   4. Nurse turns off the mat
- * 
+
  * Final Expected State & Output:
  * - Final State: SYSTEM_OFF
  * - Output: New THRESHOLD saved, shutdownSystem() executed
- * 
+
  * NOTE: Shutdown mechanism pending BME team implementation
  */
 TEST_F(FallDetectorTest, E2E_3_1_CalibrationMonitoringShutdownShouldWorkCorrectly) {
@@ -1018,7 +1018,7 @@ TEST_F(FallDetectorTest, E2E_3_1_CalibrationMonitoringShutdownShouldWorkCorrectl
     fixture->transitionToPolling();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     
-    // Step 1: Nurse performs long press to enter INPUT_PAUSED
+    // Step 1: Nurse performs short press to enter INPUT_PAUSED
     fixture->getButton()->simulateShortPress();
     fixture->getDetector()->update();
     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
