@@ -8,8 +8,6 @@ HEADER_DIRS = [
     'include/constants',
     'include/interfaces',
     'include/models',
-    'test/generatorss',
-    'test/helpers',
 ]
 SRC_DIRS = [
     'src/drivers/real',
