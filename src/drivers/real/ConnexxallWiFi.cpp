@@ -4,25 +4,16 @@
 
 class ConnexxallWiFi : public IAlertSystem {
 private:
-    const char* _ssid;
-    const char* _password;
     bool _wifiConnected;
     bool _alarmActive;
 
 public:
-    ConnexxallWiFi(const char* ssid, const char* password)
-        : _ssid(ssid), _password(password), 
-          _wifiConnected(false), _alarmActive(false) {}
+    ConnexxallWiFi()
+        : _wifiConnected(false), _alarmActive(false) {}
 
     void init() override {
-        Serial.println("Initializing WiFi and Connexxall connection...");
-        // TODO: Implement actual WiFi initialization
-        // This would include:
-        // - WiFi.begin(_ssid, _password);
-        // - Wait for connection
-        // - Set up HTTP client for Connexxall API
-        Serial.print("Connecting to WiFi: ");
-        Serial.println(_ssid);
+        Serial.println("Initializing Connexxall connection...");
+        // TODO: Implement actual Connexxall connection initialization
     }
 
     void triggerFallAlarm() override {

@@ -9,9 +9,10 @@
 
 #pragma once
 
-// WiFi Configuration (for production use)
+// WiFi Configuration
 const char* WIFI_SSID = "WIFI_SSID";
 const char* WIFI_PASSWORD = "WIFI_PASSWORD";
+const char* WOKWI_WIFI_SSID = "Wokwi-GUEST";
 
 // Connexxall API Configuration
 const char* CONNEXXALL_API_ENDPOINT = "https://api.connexxall.com/alerts";
@@ -21,6 +22,8 @@ const char* CONNEXXALL_API_KEY = "API_KEY";
 const char* BLE_DEVICE_MAC = "BLE_MAC_ADDRESS";
 const char* BLE_SERVICE_UUID = "SERVICE_UUID";
 
+// Ntfy HTTP Configuration
+const char* NTFY_HTTP_ENDPOINT = "https://ntfy.sh/patient_fall_alert_5911";
 
 // ===== include/constants\SystemConstants.h =====
 
@@ -151,6 +154,26 @@ public:
 };
 
 
+// ===== src/util\WiFiSetup.cpp =====
+
+#include <WiFi.h>
+
+class WiFiSetup {
+public:
+    static void setupWifi(const char* ssid, const char* password = "") {
+        WiFi.begin(ssid, password);
+
+        while (WiFi.status() != WL_CONNECTED) {
+            delay(1000);
+            Serial.println("Connecting...");
+        }
+
+        Serial.print("Connected to IP Address: ");
+        Serial.println(WiFi.localIP());
+    }
+};
+
+
 // ===== src/drivers/real\BlueCharmBLE.cpp =====
 
 
@@ -221,25 +244,16 @@ public:
 
 class ConnexxallWiFi : public IAlertSystem {
 private:
-    const char* _ssid;
-    const char* _password;
     bool _wifiConnected;
     bool _alarmActive;
 
 public:
-    ConnexxallWiFi(const char* ssid, const char* password)
-        : _ssid(ssid), _password(password), 
-          _wifiConnected(false), _alarmActive(false) {}
+    ConnexxallWiFi()
+        : _wifiConnected(false), _alarmActive(false) {}
 
     void init() override {
-        Serial.println("Initializing WiFi and Connexxall connection...");
-        // TODO: Implement actual WiFi initialization
-        // This would include:
-        // - WiFi.begin(_ssid, _password);
-        // - Wait for connection
-        // - Set up HTTP client for Connexxall API
-        Serial.print("Connecting to WiFi: ");
-        Serial.println(_ssid);
+        Serial.println("Initializing Connexxall connection...");
+        // TODO: Implement actual Connexxall connection initialization
     }
 
     void triggerFallAlarm() override {
@@ -315,6 +329,63 @@ public:
         _zeroOffset = (float)raw / 40.95f;
         Serial.print("Zero offset calibrated to: ");
         Serial.println(_zeroOffset);
+    }
+};
+
+
+// ===== src/drivers/sim\NtfyHttpAlert.cpp =====
+
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+class NtfyHttpAlert : public IAlertSystem {
+private:
+    const char* _endpoint;
+    bool _alarmActive;
+
+    bool sendNotification(const char* message) {
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("ERROR: WiFi not connected");
+            return false;
+        }
+        HTTPClient http;
+        http.begin(_endpoint);
+        http.addHeader("Content-Type", "text/plain");
+        int responseCode = http.POST(message);
+        http.end();
+        return responseCode > 0;
+    }
+
+public:
+    NtfyHttpAlert() : _endpoint(NTFY_HTTP_ENDPOINT), _alarmActive(false) {}
+
+    void init() override {
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("WARNING: WiFi not connected during initialization");
+        }
+        Serial.println("Alert system initialized");
+    }
+
+    void triggerFallAlarm() override {
+        _alarmActive = true;
+        if (sendNotification("PATIENT HAS FALLEN!")) {
+            Serial.println("Fall alarm sent to Ntfy");
+        } else {
+            Serial.println("Failed to send fall alarm to Ntfy");
+        }
+    }
+
+    void clearAlarm() override {
+        if (_alarmActive) {
+            _alarmActive = false;
+            if (sendNotification("ALARM CLEARED")) {
+                Serial.println("Alarm cleared via Ntfy");
+            } else {
+                Serial.println("Failed to send alarm clear to Ntfy");
+            }
+        }
     }
 };
 
@@ -498,6 +569,9 @@ class WokwiPotentiometer : public IForceSensor {
 
 
 #include <Arduino.h>
+#include <iostream>		
+#include <thread> // Required for std::this_thread::sleep_for		
+#include <chrono>
 
 FallDetector::FallDetector(IForceSensor* sensor, INurseInput* button, IAlertSystem* alert)
     : _sensor(sensor), _button(button), _alert(alert),
@@ -556,12 +630,12 @@ void FallDetector::handlePollingState() {
     float pressure = _sensor->getPressurePercentage();
     bool occupied = _sensor->isOccupied();
     
-    if (occupied && pressure > FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
+    if (occupied && pressure >= FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
         Serial.println("Alert! Person detected on mat without supervision.");
         transitionToState(SystemState::ALARM);
         return;
     }
-    
+
     // According to requirements: Short press → INPUT_PAUSED (pause for 2 mins)
     if (_button->wasShortPressed()) {
         Serial.println("Pause requested by nurse (short press)");
@@ -569,11 +643,12 @@ void FallDetector::handlePollingState() {
         return;
     }
 
-    if (_button->wasLongPressed()) {
-        Serial.println("Calibration requested by nurse (long press)");
-        transitionToState(SystemState::CALIBRATION);
-        return;
-    }
+    //THIS BEHAVIOR IS UNDEFINED.... what do we think?
+    // if (_button->wasLongPressed()) {
+    //     Serial.println("Calibration requested by nurse (long press)");
+    //     transitionToState(SystemState::CALIBRATION);
+    //     return;
+    // }
 }
 
 void FallDetector::handleAlarmState() {
@@ -686,13 +761,14 @@ void FallDetector::logStateTransition(SystemState newState) {
 #include <Arduino.h>
 
 
+
+
 // Conditional imports based on build flags
 #ifdef IS_SIMULATION
 
 
 
 #else
-
 
 
 
@@ -710,11 +786,15 @@ void setup() {
 
     #ifdef IS_SIMULATION
         Serial.println("Running in SIMULATION mode (Wokwi)");
+        WiFiSetup::setupWifi(WOKWI_WIFI_SSID);
+
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new WokwiButton(15);
-        auto* alert  = new SerialConsoleAlert();
+        auto* alert  = new NtfyHttpAlert();
     #else
         Serial.println("Running in PRODUCTION mode (Real Hardware)");
+        WiFiSetup::setupWifi(WIFI_SSID, WIFI_PASSWORD);
+
         auto* sensor = new TekscanA502(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new BlueCharmBLE(BLE_DEVICE_MAC);
         auto* alert  = new ConnexxallWiFi(WIFI_SSID, WIFI_PASSWORD);

@@ -13,6 +13,7 @@ SRC_DIRS = [
     'src/drivers/real',
     'src/drivers/sim',
     'src/logic',
+    'src/util',
 ]
 LOGIC_DIR = 'src/logic'
 MAIN_FILE = 'src/main.cpp'
@@ -80,21 +81,28 @@ def main():
         output.append(f'// ===== {falldetector_h} =====\n')
         output.append(code + '\n')
 
-    # 3. Add all driver .cpp files (implementations)
+    # 3. Add utility .cpp files (WiFiSetup, etc.)
+    util_files = get_files(['src/util'], ['.cpp'])
+    for file in util_files:
+        code = read_and_process(file)
+        output.append(f'// ===== {file} =====\n')
+        output.append(code + '\n')
+
+    # 4. Add all driver .cpp files (implementations)
     driver_files = get_files(['src/drivers/real', 'src/drivers/sim'], ['.cpp'])
     for file in driver_files:
         code = read_and_process(file)
         output.append(f'// ===== {file} =====\n')
         output.append(code + '\n')
 
-    # 4. Add FallDetector.cpp from src/logic (class implementation)
+    # 5. Add FallDetector.cpp from src/logic (class implementation)
     falldetector_cpp = os.path.join(LOGIC_DIR, 'FallDetector.cpp')
     if os.path.exists(falldetector_cpp):
         code = read_and_process(falldetector_cpp)
         output.append(f'// ===== {falldetector_cpp} =====\n')
         output.append(code + '\n')
 
-    # 5. Add main.cpp last
+    # 6. Add main.cpp last
     if os.path.exists(MAIN_FILE):
         code = read_and_process(MAIN_FILE)
         output.append(f'// ===== {MAIN_FILE} =====\n')
@@ -105,7 +113,7 @@ def main():
         f.write('\n'.join(output))
     
     mode = "SIMULATION" if is_simulation else "PRODUCTION"
-    print(f'✓ Combined sketch written to {OUTPUT_FILE} ({mode} mode)')
+    print(f'Combined sketch written to {OUTPUT_FILE} ({mode} mode)')
 
 if __name__ == '__main__':
     main()

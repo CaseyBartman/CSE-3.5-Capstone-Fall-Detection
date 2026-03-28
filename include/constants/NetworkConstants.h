@@ -1,8 +1,9 @@
 #pragma once
 
-// WiFi Configuration (for production use)
+// WiFi Configuration
 const char* WIFI_SSID = "WIFI_SSID";
 const char* WIFI_PASSWORD = "WIFI_PASSWORD";
+const char* WOKWI_WIFI_SSID = "Wokwi-GUEST";
 
 // Connexxall API Configuration
 const char* CONNEXXALL_API_ENDPOINT = "https://api.connexxall.com/alerts";
@@ -11,3 +12,6 @@ const char* CONNEXXALL_API_KEY = "API_KEY";
 // BLE Configuration
 const char* BLE_DEVICE_MAC = "BLE_MAC_ADDRESS";
 const char* BLE_SERVICE_UUID = "SERVICE_UUID";
+
+// Ntfy HTTP Configuration
+const char* NTFY_HTTP_ENDPOINT = "https://ntfy.sh/patient_fall_alert_5911";
