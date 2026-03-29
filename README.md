@@ -85,13 +85,23 @@ Domain Context: Variable naming should reflect domain context (e.g., xaLienPaylo
 
 Boolean Prefixing: All flags must use is, has, or should prefixes (e.g., isModalOpen, hasRequirement).
 
-
 ## Prohibited Practices
 No Magic Values: No literals in assertions or actions. Use named constants to explain the "why" behind a value.
 
 DRY Strings: Any string used in 2 or more places must be moved to a central constant file.
 
 Comments: Avoid these wherever possible. If you require a comment to explain the code written, the code is not readable and should be clearly refactored to follow our naming standards.
+
+## Running Tests
+Dependencies: 
+- CMake (For your dev environment, install cmake via web download, brew, winget, etc.)
+- C++ Compiler of your choosing (initially configured for GNU Make 3.81 on Windows environment. Use this link if windows: winget install GnuWin32.Make and make sure to set your PATH variable).
+- Python 
+run ```$ bash run_tests.sh --verbose --clean``` and view the results of the tests.
+
+This runs a script that builds all the mock and source code, runs the tests, and prints the resujlts
+-See test_state_machine.cpp for the tests themselves. The script references CMakeLists.txt to build the project with the items in the /test folder, runs those tests, and prints the results using parse_tests.py
+The tests are done using the Google Test C++ Framework
 
 ## License
 This is a capstone project for Ohio State University, CSE 5911
