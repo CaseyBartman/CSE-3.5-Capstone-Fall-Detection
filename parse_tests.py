@@ -170,7 +170,7 @@ class TestReporter:
             'ERROR': 'Error Handling & Invalid Input',
             'STATE': 'State Persistence & Consistency',
             'COMPLEX': 'Complex Scenarios',
-            'NFTY' : 'Alarm Notification',
+            'NTFY' : 'Alarm Notification',
         }
         return category_map.get(prefix, 'Other Tests')
     

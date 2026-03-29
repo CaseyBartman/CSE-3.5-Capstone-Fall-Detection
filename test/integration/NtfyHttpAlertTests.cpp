@@ -21,7 +21,7 @@ protected:
 };
 
 // Test case: Verifies that triggering a fall alarm sends the correct HTTP payload
-TEST_F(NtfyHttpAlertTests, ALARM_NTFY_TriggerFallAlarm_TransmitsCorrectPayload) {
+TEST_F(NtfyHttpAlertTests, NTFY_TriggerFallAlarm_TransmitsCorrectPayload) {
     // Act: Trigger the fall alarm
     alertSystem->triggerFallAlarm();
 
@@ -38,7 +38,7 @@ TEST_F(NtfyHttpAlertTests, ALARM_NTFY_TriggerFallAlarm_TransmitsCorrectPayload) 
 }
 
 // Test case: Verifies that clearing an active alarm sends the correct HTTP payload
-TEST_F(NtfyHttpAlertTests, ALARM_NTFY_ClearAlarm_WhenAlarmIsActive_TransmitsCorrectPayload) {
+TEST_F(NtfyHttpAlertTests, NTFY_ClearAlarm_WhenAlarmIsActive_TransmitsCorrectPayload) {
     // Arrange: First, trigger the alarm to make it active
     alertSystem->triggerFallAlarm();
     networkSpy.clearCapturedState(); // Clear the request from the trigger action
@@ -53,7 +53,7 @@ TEST_F(NtfyHttpAlertTests, ALARM_NTFY_ClearAlarm_WhenAlarmIsActive_TransmitsCorr
 }
 
 // Test case: Verifies that no HTTP request is sent when trying to clear an alarm that is not active
-TEST_F(NtfyHttpAlertTests, ALARM_NTFY_ClearAlarm_WhenAlarmIsNotActive_DoesNotTransmit) {
+TEST_F(NtfyHttpAlertTests, NTFY_ClearAlarm_WhenAlarmIsNotActive_DoesNotTransmit) {
     // Act: Attempt to clear an alarm that was never triggered
     alertSystem->clearAlarm();
 
@@ -62,7 +62,7 @@ TEST_F(NtfyHttpAlertTests, ALARM_NTFY_ClearAlarm_WhenAlarmIsNotActive_DoesNotTra
 }
 
 // Test case: Verifies that no HTTP request is sent when the network is disconnected
-TEST_F(NtfyHttpAlertTests, ALARM_NTFY_TriggerFallAlarm_WhenNetworkIsDisconnected_DoesNotTransmit) {
+TEST_F(NtfyHttpAlertTests, NTFY_TriggerFallAlarm_WhenNetworkIsDisconnected_DoesNotTransmit) {
     // Arrange: Simulate a disconnected network
     networkSpy.setSimulatedConnectionState(false);
 
@@ -74,7 +74,7 @@ TEST_F(NtfyHttpAlertTests, ALARM_NTFY_TriggerFallAlarm_WhenNetworkIsDisconnected
 }
 
 // Test case: Verifies that the system handles a failed HTTP POST correctly
-TEST_F(NtfyHttpAlertTests, ALARM_NTFY_TriggerFallAlarm_WhenPostFails_HandlesFailure) {
+TEST_F(NtfyHttpAlertTests, NTFY_TriggerFallAlarm_WhenPostFails_HandlesFailure) {
     // Arrange: Simulate a server error response
     networkSpy.setSimulatedResponseCode(500);
 
