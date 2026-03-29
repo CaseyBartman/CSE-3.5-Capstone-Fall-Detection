@@ -16,6 +16,14 @@ SRC_DIRS = [
     'src/util',
 ]
 LOGIC_DIR = 'src/logic'
+LOGIC_HEADERS = [
+    'src/logic/FallDetector.h',
+    'src/logic/NtfyHttpAlert.h',
+]
+# The real implementation for the network client
+REAL_DRIVERS = [
+    'src/drivers/real/EspNetworkClient.h'
+]
 MAIN_FILE = 'src/main.cpp'
 OUTPUT_FILE = 'sketch.ino'
 
@@ -74,46 +82,55 @@ def main():
         output.append(f'// ===== {file} =====\n')
         output.append(code + '\n')
 
-    # 2. Add FallDetector.h from src/logic (class declaration)
-    falldetector_h = os.path.join(LOGIC_DIR, 'FallDetector.h')
-    if os.path.exists(falldetector_h):
-        code = read_and_process(falldetector_h)
-        output.append(f'// ===== {falldetector_h} =====\n')
-        output.append(code + '\n')
+    # 2. Add all logic header files (FallDetector.h, NtfyHttpAlert.h)
+    for file_path in LOGIC_HEADERS:
+        if os.path.exists(file_path):
+            code = read_and_process(file_path)
+            output.append(f'// ===== {file_path} =====\n')
+            output.append(code + '\n')
 
-    # 3. Add utility .cpp files (WiFiSetup, etc.)
+    # 3. Add real driver implementations
+    for file_path in REAL_DRIVERS:
+        if os.path.exists(file_path):
+            code = read_and_process(file_path)
+            output.append(f'// ===== {file_path} =====\n')
+            output.append(code + '\n')
+
+    # 4. Add utility .cpp files (WiFiSetup, etc.)
     util_files = get_files(['src/util'], ['.cpp'])
     for file in util_files:
         code = read_and_process(file)
         output.append(f'// ===== {file} =====\n')
         output.append(code + '\n')
 
-    # 4. Add all driver .cpp files (implementations)
-    driver_files = get_files(['src/drivers/real', 'src/drivers/sim'], ['.cpp'])
+    # 5. Add sim driver .cpp files
+    driver_files = get_files(['src/drivers/sim'], ['.cpp'])
     for file in driver_files:
         code = read_and_process(file)
         output.append(f'// ===== {file} =====\n')
         output.append(code + '\n')
 
-    # 5. Add FallDetector.cpp from src/logic (class implementation)
+    # 6. Add FallDetector.cpp from src/logic (class implementation)
     falldetector_cpp = os.path.join(LOGIC_DIR, 'FallDetector.cpp')
     if os.path.exists(falldetector_cpp):
         code = read_and_process(falldetector_cpp)
         output.append(f'// ===== {falldetector_cpp} =====\n')
         output.append(code + '\n')
 
-    # 6. Add main.cpp last
+    # 7. Add main application file
     if os.path.exists(MAIN_FILE):
         code = read_and_process(MAIN_FILE)
         output.append(f'// ===== {MAIN_FILE} =====\n')
         output.append(code + '\n')
+    else:
+        print(f"Error: Main file not found at {MAIN_FILE}")
+        sys.exit(1)
 
-    # Write to sketch.ino
+    # Write the combined code to the output file
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         f.write('\n'.join(output))
     
-    mode = "SIMULATION" if is_simulation else "PRODUCTION"
-    print(f'Combined sketch written to {OUTPUT_FILE} ({mode} mode)')
+    print(f'Successfully created {OUTPUT_FILE} for {'simulation' if is_simulation else 'production'}.')
 
 if __name__ == '__main__':
     main()

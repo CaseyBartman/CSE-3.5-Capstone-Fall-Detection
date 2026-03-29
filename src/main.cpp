@@ -31,14 +31,16 @@ void setup() {
 
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new WokwiButton(15);
-        auto* alert  = new NtfyHttpAlert();
+        auto* networkClient = new EspNetworkClient(); // Use real network client in Sim
+        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
     #else
         Serial.println("Running in PRODUCTION mode (Real Hardware)");
         WiFiSetup::setupWifi(WIFI_SSID, WIFI_PASSWORD);
 
         auto* sensor = new TekscanA502(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new BlueCharmBLE(BLE_DEVICE_MAC);
-        auto* alert  = new ConnexxallWiFi(WIFI_SSID, WIFI_PASSWORD);
+        auto* networkClient = new EspNetworkClient();
+        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
     #endif
 
     systemController = new FallDetector(sensor, button, alert);

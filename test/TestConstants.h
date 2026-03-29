@@ -20,6 +20,13 @@ const float TEST_PRESSURE_ABOVE_THRESHOLD = 50.0f;              // Well above FA
 const unsigned long TEST_TIME_BEFORE_EXPIRY = 1000;             // 1 second before timeout
 const unsigned long TEST_OCCUPIED_STATE_INITIAL = 40.0f;        // Initial occupied pressure
 
+// NTFY Testing Values (See TestConstants.cpp for initialization to fix global linker issue)
+extern const char* TEST_NTFY_ENDPOINT;
+extern const char* EXPECTED_FALL_PAYLOAD;
+extern const char* EXPECTED_CLEAR_PAYLOAD;
+extern const char* EXPECTED_CONTENT_TYPE;
+
+
 // Validation helpers
 static_assert(TEST_PRESSURE_BELOW_THRESHOLD < FALL_DETECTION_THRESHOLD, 
     "TEST_PRESSURE_BELOW_THRESHOLD must be below FALL_DETECTION_THRESHOLD");

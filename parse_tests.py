@@ -170,6 +170,7 @@ class TestReporter:
             'ERROR': 'Error Handling & Invalid Input',
             'STATE': 'State Persistence & Consistency',
             'COMPLEX': 'Complex Scenarios',
+            'NFTY' : 'Alarm Notification',
         }
         return category_map.get(prefix, 'Other Tests')
     
@@ -191,6 +192,7 @@ class TestReporter:
             'Error Handling & Invalid Input': ['ERROR'],
             'State Persistence & Consistency': ['STATE'],
             'Complex Scenarios': ['COMPLEX'],
+            'Alarm Notification' : ['NTFY'],
             'Uncategorized': [],
         }
         return categories
@@ -259,6 +261,7 @@ class TestReporter:
             'Error Handling & Invalid Input',
             'State Persistence & Consistency',
             'Complex Scenarios',
+            'Alarm Notification',
             'Other Tests',
             'Uncategorized',
         ]
@@ -304,6 +307,7 @@ class TestReporter:
             'Error Handling & Invalid Input',
             'State Persistence & Consistency',
             'Complex Scenarios',
+            'Alarm Notification',
             'Other Tests',
             'Uncategorized',
         ]

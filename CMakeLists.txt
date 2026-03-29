@@ -25,6 +25,8 @@ include_directories(
 add_executable(
     fall_detection_tests
     test/test_state_machine.cpp
+    test/integration/NtfyHttpAlertTests.cpp
+    test/TestConstants.cpp
     src/logic/FallDetector.cpp
     test/SerialImpl.cpp
     test/helpers/TimeSimulator.cpp
