@@ -1,8 +1,5 @@
 #include "logic/FallDetector.h"
 #include <Arduino.h>
-#include <iostream>		
-#include <thread> // Required for std::this_thread::sleep_for		
-#include <chrono>
 
 FallDetector::FallDetector(IForceSensor* sensor, INurseInput* button, IAlertSystem* alert)
     : _sensor(sensor), _button(button), _alert(alert),
@@ -48,8 +45,7 @@ void FallDetector::update() {
 }
 
 void FallDetector::handleIdleState() {
-    // Check if sensor is ready and WiFi connected (simulated as always ready in Wokwi)
-    // In production, we would check something like WiFi.status() == WL_CONNECTED
+    // Check if system is ready and WiFi connected (simulated as always ready)
     bool isReady = true; // Simplified for now
     
     if (isReady) {
@@ -115,7 +111,7 @@ void FallDetector::handleCalibrationState() {
         Serial.print("Calibration complete - New threshold: ");
         Serial.print(_calibrationThreshold);
         Serial.println("%");
-        std::this_thread::sleep_for(std::chrono::seconds(3)); //Wait so the state switch isn't immediate
+        delay(3000); //Wait so the state switch isn't immediate
         transitionToState(SystemState::POLLING);
     }
 }

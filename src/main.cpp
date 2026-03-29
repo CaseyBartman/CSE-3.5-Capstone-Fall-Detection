@@ -8,7 +8,7 @@
     #include "drivers/sim/WokwiButton.cpp"
     #include "drivers/sim/SerialConsoleAlert.cpp"
 #elif defined(REAL_BASIC)
-    #include "drivers/real-basic/RealPotentiometer.h"
+    #include "drivers/real-basic/RealTekscan.h"
     #include "drivers/real-basic/PhysicalButton.h"
     #include "drivers/real-basic/LEDAlert.h"
 #else
@@ -22,7 +22,7 @@ FallDetector* systemController = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    delay(1000);
+    delay(2000);  // Give serial monitor time to connect before printing startup messages
     
     Serial.println("========================================");
     Serial.println("Patient Fall Detection System");
@@ -34,11 +34,11 @@ void setup() {
         auto* button = new WokwiButton(15);
         auto* alert  = new SerialConsoleAlert();
     #elif defined(REAL_BASIC)
-        Serial.println("Running in REAL-BASIC mode (Random sensor + LED + Button)");
+        Serial.println("Running in REAL-BASIC mode (Tekscan A502 + LED + Button)");
         /* Physical pins(replace when changed)*/
-        auto* sensor = new RealPotentiometer(14, DEFAULT_PRESSURE_THRESHOLD);
-        auto* button = new PhysicalButton(13); 
-        auto* alert  = new LEDAlert(12);   
+        auto* sensor = new RealTekscan(A0, DEFAULT_PRESSURE_THRESHOLD);
+        auto* button = new PhysicalButton(2); 
+        auto* alert  = new LEDAlert(9);   
     #else
         Serial.println("Running in PRODUCTION mode (Real Hardware)");
         auto* sensor = new TekscanA502(34, DEFAULT_PRESSURE_THRESHOLD);
