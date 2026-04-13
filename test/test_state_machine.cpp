@@ -482,22 +482,6 @@ TEST_F(FallDetectorTest, EDGE_5_ZeroPressureValueShouldRemainInPolling) {
     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
 }
 
-// /**
-//  * EDGE-6: Rapid Button Presses (Debouncing)
-//  */
-// TEST_F(FallDetectorTest, EDGE_6_RapidButtonPresses) {
-//     fixture->transitionToPolling();
-    
-//     // Simulate rapid short presses
-//     for (int i = 0; i < 3; i++) {
-//         fixture->getButton()->simulateShortPress();
-//         fixture->getDetector()->update();
-//     }
-    
-//     // Should be in INPUT_PAUSED (from first press)
-//     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::INPUT_PAUSED);
-// }
-
 /**
  * EDGE-7: Short Press Followed Immediately by Short Press
  */
@@ -582,17 +566,17 @@ TEST_F(FallDetectorTest, EDGE_10_CalibrationExactlyAtDurationShouldComplete) {
 // /**
 //  * ERROR-1: Short Press in IDLE State
 //  */
-// TEST_F(FallDetectorTest, ERROR_1_ShortPressInIdleState) {
-//     // System is in IDLE
-//     ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::IDLE);
+TEST_F(FallDetectorTest, ERROR_1_ShortPressInIdleState) {
+    // System is in IDLE
+    ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::IDLE);
     
-//     // Short press in IDLE (unexpected input)
-//     fixture->getButton()->simulateShortPress();
-//     fixture->getDetector()->update();
+    // Short press in IDLE (unexpected input)
+    fixture->getButton()->simulateShortPress();
+    fixture->getDetector()->update();
     
-//     // Should transition to POLLING, not react to button
-//     EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::IDLE);
-// }
+    // Should transition to POLLING, not react to button
+    EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+}
 
 /**
  * ERROR-2: Long Press in ALARM State (Should be Ignored)

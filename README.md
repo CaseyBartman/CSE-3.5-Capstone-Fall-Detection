@@ -1,107 +1,98 @@
 # CSE-3.5-Capstone Fall Detection System
+
 ## Overview
+This system is a smart pressure-sensing floor mat that continuously monitors patient movement to detect when a patient stands up from a bed or chair, and sends alerts via ntfy. It also listens for BLE button presses from nurses to pause, calibrate, or acknowledge alarms. This system is designed for engineers, clinical stakeholders, and future development teams.
 
-This system monitors a force sensor (Tekscan A502) to detect when a patient stands up from a bed or chair, and sends alerts via Connexxall. It also listens for BLE button presses from nurses to pause, calibrate, or acknowledge alarms.
+## System States & Workflows
+The system operates based on a state machine that manages its behavior.
 
-## System States
-
-| Current State |            Input/Trigger         |   New State  |    Logic/Output Action    |
+| Current State | Input/Trigger | New State | Logic/Output Action |
 |---------------|----------------------------------|--------------|---------------------------|
-| SYSTEM_OFF    | System power on                  | IDLE         | bootUpSystem()            |
-| IDLE          | isWifiConnected && isSensorReady | POLLING      | Log: "System Armed"       |
-| POLLING       | Nurse presses hold button        | INPUT_PAUSED | pauseLogic() (for 2 mins) |
-| INPUT_PAUSED  | Timer > PAUSE_DURATION_MS        | POLLING      | Resume monitoring         |
-| INPUT_PAUSED  | Button pressed once (short)      | CALIBRATION  | Start zeroing sequence    |
-| CALIBRATION   | timer > CALIB_DURATION_MS        | POLLING      | Save new zero offsets     |
-| POLLING       | detectedForce > THRESHOLD        | ALARM        | Send alarm to Connexxall  |
-| ALARM         | Nurse Press Button               | POLLING      | clearConnexxallAlert()    |
+| `SYSTEM_OFF` | System power on | `IDLE` | `bootUpSystem()` |
+| `IDLE` | `isWifiConnected && isSensorReady` | `POLLING` | Log: "System Armed" |
+| `POLLING` | Nurse presses button (short) | `PAUSED` | `pauseLogic()` (for 2 mins) |
+| `POLLING` | `detectedForce > THRESHOLD` | `ALERT` | Send alarm via ntfy |
+| `PAUSED` | Timer > `PAUSE_DURATION_MS` | `POLLING` | Resume monitoring |
+| `PAUSED` | Nurse presses button (short) | `CALIBRATING` | Start zeroing sequence |
+| `CALIBRATING` | Timer > `CALIB_DURATION_MS` | `POLLING` | Save new zero offsets |
+| `ALERT` | Nurse presses button (short) | `POLLING` | `clearNtfyAlert()` |
 
 ## Architecture
-
-This project uses **Dependency Injection** for simulation-first development. The core logic is completely independent of hardware, allowing you to:
-- Develop and test in Wokwi with simulated components
-- Deploy to real hardware without changing business logic
+This project uses **Dependency Injection** for simulation-first development. The core logic is completely independent of hardware, allowing for robust testing and development flexibility.
 
 ### Directory Structure
+- **`sketch.ino`**: Standalone Arduino sketch for Wokwi simulation.
+- **`include/`**: Contains interfaces (`IForceSensor`, `INurseInput`, `IAlertSystem`), data models (`SystemState`, `SensorPayload`), and constants.
+- **`src/`**:
+    - **`logic/`**: The core state machine (`FallDetector.cpp`)—the "brains" of the system.
+    - **`drivers/`**: Real and simulated hardware drivers. Dependency injection allows swapping between `real/` and `sim/` implementations.
+    - **`main.cpp`**: The composition root where dependencies are wired together.
+- **`test/`**: Unit and integration tests using the Google Test framework.
+- **`run_tests.sh`**: A script that builds and runs all tests via CMake.
 
+## Technical Setup Guide
+
+### 1. Wokwi Simulation Setup
+Wokwi allows you to run the entire system in a browser without any physical hardware.
+
+1.  **Generate the Sketch**: Run the Python script to combine all necessary source files into a single Arduino sketch.
+    ```bash
+    python combine_to_sketch.py
+    ```
+2.  **Open Wokwi**: Go to [Wokwi.com](https://wokwi.com/) and create a new Arduino project.
+3.  **Load the Sketch**: Copy the entire content of the generated `sketch.ino` file and paste it into the `sketch.ino` tab in your Wokwi project.
+4.  **Load the Diagram**: Copy the entire content of `diagram.json` from this repository and paste it into the `diagram.json` tab in Wokwi. This file defines the simulated hardware components (like the potentiometer for the force sensor and the button for nurse input).
+5.  **Run Simulation**: Click the "Start Simulation" button. You can now interact with the simulated hardware and see log output in the Serial Monitor.
+
+### 2. Running the Test Suite
+The project uses the Google Test framework for C++ unit and integration testing.
+
+**Dependencies:**
+-   **CMake**: For building the test suite.
+-   **C++ Compiler**: Configured for GNU Make 3.81 on Windows.
+-   **Python**: For the test parsing script.
+
+**Execution:**
+Run the following command in a bash terminal to build the tests, execute them, and parse the results:
+```bash
+bash run_tests.sh --verbose --clean
 ```
-patient-fall-alert-system/
-├── sketch.ino                      // Standalone Arduino sketch for Wokwi (recommended)
-├── include/
-│   ├── constants/
-│   │   ├── SystemConstants.h       // Timers, thresholds
-│   │   └── NetworkConstants.h      // API endpoints, WiFi credentials
-│   ├── interfaces/
-│   │   ├── IForceSensor.h          // Abstract interface for sensors
-│   │   ├── INurseInput.h           // Abstract interface for button input
-│   │   └── IAlertSystem.h          // Abstract interface for alerts
-│   └── models/
-│       ├── SystemState.h           // Enum: IDLE, POLLING, ALARM...
-│       └── SensorPayload.h         // Data transfer object
-├── src/
-│   ├── logic/
-│   │   ├── FallDetector.cpp        // State machine (The Brain)
-│   │   └── FallDetector.h
-│   ├── drivers/
-│   │   ├── real/
-│   │   │   ├── TekscanA502.cpp     // Real force sensor
-│   │   │   ├── BlueCharmBLE.cpp    // Real BLE button
-│   │   │   └── ConnexxallWiFi.cpp  // Real HTTP alerts
-│   │   └── sim/
-│   │       ├── WokwiPotentiometer.cpp  // Simulates force sensor
-│   │       ├── WokwiButton.cpp         // Simulates nurse button
-│   │       └── SerialConsoleAlert.cpp  // Simulates alerts
-│   └── main.cpp                    // Composition root
-├── test/                           // Unit tests (future)
-├── diagram.json                    // Wokwi circuit diagram
-└── wokwi.toml                      // Wokwi configuration
-```
+This script automates the entire test process and provides a clean summary of the results.
 
-### Quick Start - Wokwi Simulation
+### 3. Hardware Deployment (Arduino)
+To deploy the system to a physical Arduino device, you will need to configure the build script to use the **real** hardware drivers instead of the simulated ones.
 
-Run the ``combine_to_sketch.py`` script with the flag to decide whether we want to build for production or simulation with dependency injection.
+1.  **Modify `combine_to_sketch.py`**: Open the `combine_to_sketch.py` script and change the simulation flag to `False`. This will ensure the script includes the drivers from `src/drivers/real/` instead of `src/drivers/sim/`.
+2.  **Generate the Production Sketch**:
+    ```bash
+    python combine_to_sketch.py
+    ```
+3.  **Compile and Upload**: Open the Arduino IDE, paste the content of the newly generated `sketch.ino`, and upload it to your connected hardware.
 
-Example: 
-```$ python combine_to_sketch.py``` then, copy the sketch.ino file and place it into the web browser for Wokwi, and copy the ```diagram.json``` file and place it into that browser project as well. You can then build the project and run it there to see all the logs and test behavior. 
+## Tips for Future Development
+- **Start with a Test**: Before adding or changing any logic in `FallDetector.cpp`, create a new test case in `test/test_state_machine.cpp` that reproduces the desired behavior or bug. This follows our Test-Driven Design (TDD) philosophy.
+- **Add New Hardware**: To support a new type of sensor or alert system:
+    1.  Define a new interface in `include/interfaces/`.
+    2.  Create a simulated version in `src/drivers/sim/`.
+    3.  Create the real hardware driver in `src/drivers/real/`.
+    4.  Update the composition root (`main.cpp`) and the `combine_to_sketch.py` script to include the new driver.
+- **Stay Abstract**: Always keep the core logic in `FallDetector.cpp` free of any hardware-specific code. It should only interact with interfaces, never concrete drivers.
 
-
-### Development Standards
 ## Engineering Standards & Testing Manifesto
 To ensure our codebase remains scalable and our tests act as reliable documentation, we adhere to the following architectural principles:
 
-## Logic & Abstraction
-The Stepdown Rule: Code must read as a top-down narrative. High-level logic stays at the top, descending one level of abstraction at a time.
+### Logic & Abstraction
+- **The Stepdown Rule**: Code must read as a top-down narrative. High-level logic stays at the top, descending one level of abstraction at a time.
+- **Encapsulation Over Exposure**: Prioritize hiding storage or internal structural details. The top layer should never interact with the "how," only the "what."
 
-Encapsulation Over Exposure: Prioritize hiding storage or internal structural details. The top layer should never interact with the "how," only the "what."
+### Naming & Documentation
+- **The "Why/What/How" Rule**: Variable and function names must clearly communicate their purpose and intent.
+- **Boolean Prefixing**: All flags must use `is`, `has`, or `should` prefixes (e.g., `isModalOpen`).
 
-Helper Logic: If any conditional (if) path exceeds 2 lines, it must be extracted into a descriptive helper function.
-
-Function Size: Keep functions concise. Target 15 lines, with a hard limit of 20 lines.
-
-## Naming & Documentation
-The "Why/What/How" Rule: Variable and function names must clearly communicate their purpose and intent.
-
-Domain Context: Variable naming should reflect domain context (e.g., xaLienPayload) rather than generic terms.
-
-Boolean Prefixing: All flags must use is, has, or should prefixes (e.g., isModalOpen, hasRequirement).
-
-## Prohibited Practices
-No Magic Values: No literals in assertions or actions. Use named constants to explain the "why" behind a value.
-
-DRY Strings: Any string used in 2 or more places must be moved to a central constant file.
-
-Comments: Avoid these wherever possible. If you require a comment to explain the code written, the code is not readable and should be clearly refactored to follow our naming standards.
-
-## Running Tests
-Dependencies: 
-- CMake (For your dev environment, install cmake via web download, brew, winget, etc.)
-- C++ Compiler of your choosing (initially configured for GNU Make 3.81 on Windows environment. Use this link if windows: winget install GnuWin32.Make and make sure to set your PATH variable).
-- Python 
-run ```$ bash run_tests.sh --verbose --clean``` and view the results of the tests.
-
-This runs a script that builds all the mock and source code, runs the tests, and prints the resujlts
--See test_state_machine.cpp for the tests themselves. The script references CMakeLists.txt to build the project with the items in the /test folder, runs those tests, and prints the results using parse_tests.py
-The tests are done using the Google Test C++ Framework
+### Prohibited Practices
+- **No Magic Values**: No literals in assertions or actions. Use named constants to explain the "why" behind a value.
+- **DRY Strings**: Any string used in 2 or more places must be moved to a central constant file.
+- **Comments**: Avoid these wherever possible. If you require a comment to explain the code, the code is not readable and should be refactored.
 
 ## License
-This is a capstone project for Ohio State University, CSE 5911
+This is a capstone project for The Ohio State University, CSE 5911.
