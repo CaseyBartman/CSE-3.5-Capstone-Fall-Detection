@@ -5,7 +5,14 @@
 ### 1.1 Purpose
 This manual is your guide to using the Fall Detection System. It is written for clinical staff who will use the system daily. This document will help you understand what the system does, how to use it, and what to do in different situations.
 
-### 1.2 What is the Fall Detection System?
+### 1.2 Documentation Guide
+This **User Manual** provides a simplified view of how patients and nurses interact with the system. It explains the different use cases and how the system behaves based on your inputs.
+
+For more technical information, please see the other handoff documents:
+-   **`README.md`**: This file is for engineers. It explains the technical architecture and how to set up the development environment to add new features.
+-   **Definition of Done**: This is a product requirements document. It should be used by engineers to validate the implementation and by clinical staff to understand the system's exact capabilities and limitations.
+
+### 1.3 What is the Fall Detection System?
 The Fall Detection System is a smart pressure-sensing mat that helps prevent patient falls. You place it in front of the toilet, and it continuously monitors their movement. If a patient tries to stand up without assistance, the system instantly sends an alert to the nursing staff.
 
 You can also use a small, wireless button to pause the system when you need to assist a patient, recalibrate the sensor, or acknowledge an alarm.
