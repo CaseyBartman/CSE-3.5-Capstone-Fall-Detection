@@ -10,6 +10,16 @@ This repository contains several documents to support a smooth transition to fut
 -   **The `USER_MANUAL.md`** is a non-technical guide for clinical staff (nurses). It explains the system's purpose and day-to-day operation in simple terms, focusing on user workflows and troubleshooting.
 -   **The Definition of Done (DoD)** is the product requirements document. It defines the exact system behaviors, user stories, and edge cases. It should be used by engineers to verify the implementation and by stakeholders to understand the system's precise capabilities and limitations. This file is not saved in this repository, but was provided with the other handoff documentation. 
 
+## Table of Contents
+- [Overview](#overview)
+- [Handoff Documentation Guide](#handoff-documentation-guide)
+- [System States & Workflows](#system-states--workflows)
+- [Architecture](#architecture)
+- [Technical Setup Guide](#technical-setup-guide)
+- [Tips for Future Development](#tips-for-future-development)
+- [Engineering Standards & Testing Manifesto](#engineering-standards--testing-manifesto)
+- [License](#license)
+
 ## System States & Workflows
 The system operates based on a state machine that manages its behavior.
 

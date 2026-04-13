@@ -17,6 +17,13 @@ The Fall Detection System is a smart pressure-sensing mat that helps prevent pat
 
 You can also use a small, wireless button to pause the system when you need to assist a patient, recalibrate the sensor, or acknowledge an alarm.
 
+## Table of Contents
+- [1. Introduction](#1-introduction)
+- [2. Getting Started: Alerts](#2-getting-started-alerts)
+- [3. How the System Works: A Day in the Life](#3-how-the-system-works-a-day-in-the-life)
+- [4. Frequently Asked Questions (FAQ)](#4-frequently-asked-questions-faq)
+- [5. Troubleshooting](#5-troubleshooting)
+
 ## 2. Getting Started: Alerts
 
 ### 2.1 Where Do the Alarm Signals Go?
