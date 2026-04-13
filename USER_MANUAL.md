@@ -1,5 +1,12 @@
 # Fall Detection System - User Manual
 
+## Table of Contents
+- [1. Introduction](#1-introduction)
+- [2. Getting Started: Alerts](#2-getting-started-alerts)
+- [3. How the System Works: A Day in the Life](#3-how-the-system-works-a-day-in-the-life)
+- [4. Frequently Asked Questions (FAQ)](#4-frequently-asked-questions-faq)
+- [5. Troubleshooting](#5-troubleshooting)
+
 ## 1. Introduction
 
 ### 1.1 Purpose
@@ -16,13 +23,6 @@ For more technical information, please see the other handoff documents:
 The Fall Detection System is a smart pressure-sensing mat that helps prevent patient falls. You place it in front of the toilet, and it continuously monitors their movement. If a patient tries to stand up without assistance, the system instantly sends an alert to the nursing staff.
 
 You can also use a small, wireless button to pause the system when you need to assist a patient, recalibrate the sensor, or acknowledge an alarm.
-
-## Table of Contents
-- [1. Introduction](#1-introduction)
-- [2. Getting Started: Alerts](#2-getting-started-alerts)
-- [3. How the System Works: A Day in the Life](#3-how-the-system-works-a-day-in-the-life)
-- [4. Frequently Asked Questions (FAQ)](#4-frequently-asked-questions-faq)
-- [5. Troubleshooting](#5-troubleshooting)
 
 ## 2. Getting Started: Alerts
 
