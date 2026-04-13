@@ -7,6 +7,8 @@
 - [4. Frequently Asked Questions (FAQ)](#4-frequently-asked-questions-faq)
 - [5. Troubleshooting](#5-troubleshooting)
 
+Another version of this document exists for future handoff documentation editing here: https://docs.google.com/document/d/1zu8R34xOgtsTTHlpuhSVWi8CvuyDlSidG8npKi_QmLA/edit?tab=t.0
+
 ## 1. Introduction
 
 ### 1.1 Purpose
