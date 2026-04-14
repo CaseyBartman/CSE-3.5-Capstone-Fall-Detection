@@ -9,9 +9,10 @@
 
 #pragma once
 
-// WiFi Configuration (for production use)
+// WiFi Configuration
 const char* WIFI_SSID = "WIFI_SSID";
 const char* WIFI_PASSWORD = "WIFI_PASSWORD";
+const char* WOKWI_WIFI_SSID = "Wokwi-GUEST";
 
 // Connexxall API Configuration
 const char* CONNEXXALL_API_ENDPOINT = "https://api.connexxall.com/alerts";
@@ -21,6 +22,8 @@ const char* CONNEXXALL_API_KEY = "API_KEY";
 const char* BLE_DEVICE_MAC = "BLE_MAC_ADDRESS";
 const char* BLE_SERVICE_UUID = "SERVICE_UUID";
 
+// Ntfy HTTP Configuration
+const char* NTFY_HTTP_ENDPOINT = "https://ntfy.sh/patient_fall_alert_5911";
 
 // ===== include/constants\SystemConstants.h =====
 
@@ -64,6 +67,20 @@ public:
     virtual float getPressurePercentage() = 0; // Returns 0.0 to 100.0
     virtual bool isOccupied() = 0;             // Returns true if > threshold
     virtual ~IForceSensor() {}
+};
+
+
+// ===== include/interfaces\INetworkClient.h =====
+
+#pragma once
+#include <string>
+
+class INetworkClient {
+public:
+    virtual ~INetworkClient() = default;
+    virtual bool isNetworkConnected() const = 0;
+    virtual int post(const char* endpointUrl, const char* contentType, const char* payload) = 0;
+    virtual const char* getResponseBody() const = 0; // For logging
 };
 
 
@@ -112,7 +129,7 @@ enum class SystemState {
 };
 
 
-// ===== src/logic\FallDetector.h =====
+// ===== src/logic/FallDetector.h =====
 
 #pragma once
 
@@ -151,170 +168,124 @@ public:
 };
 
 
-// ===== src/drivers/real\BlueCharmBLE.cpp =====
+// ===== src/logic/NtfyHttpAlert.h =====
+
+#pragma once
 
 
+#include <Arduino.h> // For Serial
 
-#include <Arduino.h>
-#include <iostream>		
-#include <thread> // Required for std::this_thread::sleep_for		
-#include <chrono>
-
-class BlueCharmBLE : public INurseInput {
+class NtfyHttpAlert : public IAlertSystem {
 private:
-    const char* _deviceMAC;
-    bool _shortPressFlag;
-    bool _longPressFlag;
-    bool _connected;
+    INetworkClient* _networkClient;
+    const char* _endpointUrl;
+    bool _isAlarmActive;
+
+    bool sendNotification(const char* messagePayload) {
+        if (!_networkClient->isNetworkConnected()) {
+            Serial.println("ERROR: Network unavailable for transmission");
+            return false;
+        }
+        
+        const char* textContentType = "text/plain";
+        int responseStatusCode = _networkClient->post(_endpointUrl, textContentType, messagePayload);
+        
+        Serial.print("Notification sent. Response status code: ");
+        Serial.println(responseStatusCode);
+
+        bool isSuccess = responseStatusCode > 0 && responseStatusCode < 400;
+        if (!isSuccess) {
+            Serial.print("ERROR: HTTP POST failed. Response body: ");
+            Serial.println(_networkClient->getResponseBody());
+        }
+        
+        return isSuccess;
+    }
 
 public:
-    BlueCharmBLE(const char* deviceMAC) 
-        : _deviceMAC(deviceMAC), _shortPressFlag(false), 
-          _longPressFlag(false), _connected(false) {}
+    NtfyHttpAlert(INetworkClient* networkClient, const char* endpointUrl) 
+        : _networkClient(networkClient), _endpointUrl(endpointUrl), _isAlarmActive(false) {}
 
     void init() override {
-        Serial.println("Initializing Blue Charm BC B2 BLE connection...");
-        // TODO: Implement actual BLE initialization
-        // This would include:
-        // - BLE stack initialization
-        // - Scanning for the device with _deviceMAC
-        // - Connecting to the device
-        // - Subscribing to button press notifications
-        Serial.print("Attempting to connect to BLE device: ");
-        Serial.println(_deviceMAC);
-    }
-
-    void update() override {
-        // Clear flags
-        _shortPressFlag = false;
-        _longPressFlag = false;
-        
-        // TODO: Implement BLE event processing
-        // This would check for incoming BLE notifications
-        // and set the appropriate flags based on button press type
-    }
-
-    bool isPressed() override {
-        // TODO: Return actual button state from BLE
-        return false;
-    }
-
-    bool wasShortPressed() override {
-        return _shortPressFlag;
-    }
-
-    bool wasLongPressed() override {
-        return _longPressFlag;
-    }
-
-    bool isConnected() const {
-        return _connected;
-    }
-};
-
-
-// ===== src/drivers/real\ConnexxallWiFi.cpp =====
-
-
-
-#include <Arduino.h>
-
-class ConnexxallWiFi : public IAlertSystem {
-private:
-    const char* _ssid;
-    const char* _password;
-    bool _wifiConnected;
-    bool _alarmActive;
-
-public:
-    ConnexxallWiFi(const char* ssid, const char* password)
-        : _ssid(ssid), _password(password), 
-          _wifiConnected(false), _alarmActive(false) {}
-
-    void init() override {
-        Serial.println("Initializing WiFi and Connexxall connection...");
-        // TODO: Implement actual WiFi initialization
-        // This would include:
-        // - WiFi.begin(_ssid, _password);
-        // - Wait for connection
-        // - Set up HTTP client for Connexxall API
-        Serial.print("Connecting to WiFi: ");
-        Serial.println(_ssid);
-    }
-
-    void triggerFallAlarm() override {
-        _alarmActive = true;
-        Serial.println("Sending fall alarm to Connexxall...");
-        
-        // TODO: Implement actual HTTP POST to Connexxall API
-        // This would include:
-        // - Create JSON payload with alert details
-        // - POST to CONNEXXALL_API_ENDPOINT
-        // - Include CONNEXXALL_API_KEY in headers
-        // - Handle response and retry logic
-        
-        Serial.println("Fall alarm sent to Connexxall");
-    }
-
-    void clearAlarm() override {
-        if (_alarmActive) {
-            _alarmActive = false;
-            Serial.println("Clearing alarm in Connexxall...");
-            
-            // TODO: Implement actual HTTP request to clear alarm
-            // This might be a DELETE or PUT request depending on Connexxall API
-            
-            Serial.println("Alarm cleared in Connexxall");
+        if (!_networkClient->isNetworkConnected()) {
+            Serial.println("WARNING: Network disconnected during initialization");
         }
     }
 
-    bool isWiFiConnected() const {
-        // TODO: Return WiFi.status() == WL_CONNECTED
-        return _wifiConnected;
+    void triggerFallAlarm() override {
+        _isAlarmActive = true;
+        if (!sendNotification("PATIENT HAS FALLEN!")) {
+            Serial.println("DEBUG: Fall alarm transmission failed");
+        }
+    }
+
+    void clearAlarm() override {
+        if (_isAlarmActive) {
+            _isAlarmActive = false;
+            if (!sendNotification("ALARM CLEARED")) {
+                Serial.println("DEBUG: Alarm clear transmission failed");
+            }
+        }
     }
 };
 
 
-// ===== src/drivers/real\TekscanA502.cpp =====
+// ===== src/drivers/real/EspNetworkClient.h =====
 
+#pragma once
 
-#include <Arduino.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
-class TekscanA502 : public IForceSensor {
+class EspNetworkClient : public INetworkClient {
 private:
-    const int _pin;
-    const float _threshold;
-    float _zeroOffset;
+    String _lastResponseBody; // Use Arduino String to hold response body
 
 public:
-    TekscanA502(int pin, float threshold = 15.0f) 
-        : _pin(pin), _threshold(threshold), _zeroOffset(0.0f) {}
-
-    void init() override {
-        pinMode(_pin, INPUT);
-        Serial.println("TekscanA502 force sensor initialized");
-        // TODO: Implement actual Tekscan A502 initialization
-        // This may include I2C/SPI setup or specific calibration routines
+    bool isNetworkConnected() const override {
+        return WiFi.status() == WL_CONNECTED;
     }
 
-    float getPressurePercentage() override {
-        // TODO: Implement actual Tekscan A502 reading logic
-        // This is a placeholder that reads from ADC
-        int raw = analogRead(_pin);
-        float pressure = (float)raw / 40.95f;
-        return pressure - _zeroOffset;
+    int post(const char* endpointUrl, const char* contentType, const char* payload) override {
+        HTTPClient httpClient;
+        httpClient.begin(endpointUrl);
+        httpClient.addHeader("Content-Type", contentType);
+        
+        int responseStatusCode = httpClient.POST(payload);
+        
+        if (responseStatusCode < 0 || responseStatusCode >= 400) {
+            _lastResponseBody = httpClient.getString();
+        } else {
+            _lastResponseBody = "";
+        }
+        
+        httpClient.end();
+        
+        return responseStatusCode;
     }
 
-    bool isOccupied() override {
-        return getPressurePercentage() > _threshold;
+    const char* getResponseBody() const override {
+        return _lastResponseBody.c_str();
     }
+};
 
-    void calibrateZero() {
-        // Read current pressure and set as zero offset
-        int raw = analogRead(_pin);
-        _zeroOffset = (float)raw / 40.95f;
-        Serial.print("Zero offset calibrated to: ");
-        Serial.println(_zeroOffset);
+
+// ===== src/util\WiFiSetup.cpp =====
+
+#include <WiFi.h>
+
+class WiFiSetup {
+public:
+    static void setupWifi(const char* ssid, const char* password = "") {
+        WiFi.begin(ssid, password);
+
+        while (WiFi.status() != WL_CONNECTED) {
+            delay(1000);
+            Serial.println("Connecting...");
+        }
+
+        Serial.print("Connected to IP Address: ");
+        Serial.println(WiFi.localIP());
     }
 };
 
@@ -498,6 +469,9 @@ class WokwiPotentiometer : public IForceSensor {
 
 
 #include <Arduino.h>
+#include <iostream>		
+#include <thread> // Required for std::this_thread::sleep_for		
+#include <chrono>
 
 FallDetector::FallDetector(IForceSensor* sensor, INurseInput* button, IAlertSystem* alert)
     : _sensor(sensor), _button(button), _alert(alert),
@@ -556,12 +530,12 @@ void FallDetector::handlePollingState() {
     float pressure = _sensor->getPressurePercentage();
     bool occupied = _sensor->isOccupied();
     
-    if (occupied && pressure > FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
+    if (occupied && pressure >= FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
         Serial.println("Alert! Person detected on mat without supervision.");
         transitionToState(SystemState::ALARM);
         return;
     }
-    
+
     // According to requirements: Short press → INPUT_PAUSED (pause for 2 mins)
     if (_button->wasShortPressed()) {
         Serial.println("Pause requested by nurse (short press)");
@@ -569,11 +543,12 @@ void FallDetector::handlePollingState() {
         return;
     }
 
-    if (_button->wasLongPressed()) {
-        Serial.println("Calibration requested by nurse (long press)");
-        transitionToState(SystemState::CALIBRATION);
-        return;
-    }
+    //THIS BEHAVIOR IS UNDEFINED.... what do we think?
+    // if (_button->wasLongPressed()) {
+    //     Serial.println("Calibration requested by nurse (long press)");
+    //     transitionToState(SystemState::CALIBRATION);
+    //     return;
+    // }
 }
 
 void FallDetector::handleAlarmState() {
@@ -686,13 +661,14 @@ void FallDetector::logStateTransition(SystemState newState) {
 #include <Arduino.h>
 
 
+
+
 // Conditional imports based on build flags
 #ifdef IS_SIMULATION
 
 
 
 #else
-
 
 
 
@@ -710,14 +686,20 @@ void setup() {
 
     #ifdef IS_SIMULATION
         Serial.println("Running in SIMULATION mode (Wokwi)");
+        WiFiSetup::setupWifi(WOKWI_WIFI_SSID);
+
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new WokwiButton(15);
-        auto* alert  = new SerialConsoleAlert();
+        auto* networkClient = new EspNetworkClient(); // Use real network client in Sim
+        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
     #else
         Serial.println("Running in PRODUCTION mode (Real Hardware)");
+        WiFiSetup::setupWifi(WIFI_SSID, WIFI_PASSWORD);
+
         auto* sensor = new TekscanA502(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new BlueCharmBLE(BLE_DEVICE_MAC);
-        auto* alert  = new ConnexxallWiFi(WIFI_SSID, WIFI_PASSWORD);
+        auto* networkClient = new EspNetworkClient();
+        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
     #endif
 
     systemController = new FallDetector(sensor, button, alert);
