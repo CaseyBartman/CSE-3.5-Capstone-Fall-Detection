@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "logic/FallDetector.h"
 #include "constants/SystemConstants.h"
+#include "constants/NetworkConstants.h"
+#include "util/WiFiSetup.cpp"
 
 // Conditional imports based on build flags
 #ifdef IS_SIMULATION
@@ -11,11 +13,11 @@
     #include "drivers/real-basic/RealTekscan.h"
     #include "drivers/real-basic/PhysicalButton.h"
     #include "drivers/real-basic/LEDAlert.h"
+    #include "drivers/sim/NtfyHttpAlert.cpp"
 #else
     #include "drivers/real/TekscanA502.cpp"
     #include "drivers/real/BlueCharmBLE.cpp"
     #include "drivers/real/ConnexxallWiFi.cpp"
-    #include "constants/NetworkConstants.h"
 #endif
 
 FallDetector* systemController = nullptr;
@@ -30,6 +32,8 @@ void setup() {
 
     #ifdef IS_SIMULATION
         Serial.println("Running in SIMULATION mode (Wokwi)");
+        WiFiSetup::setupWifi(WOKWI_WIFI_SSID);
+
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new WokwiButton(15);
         auto* alert  = new SerialConsoleAlert();
@@ -38,12 +42,17 @@ void setup() {
         /* Physical pins(replace when changed)*/
         auto* sensor = new RealTekscan(A0, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new PhysicalButton(2); 
-        auto* alert  = new LEDAlert(9);   
+        auto* alert  = new LEDAlert(9);
+        auto* networkClient = new EspNetworkClient(); // Use real network client in Sim
+        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
     #else
         Serial.println("Running in PRODUCTION mode (Real Hardware)");
+        WiFiSetup::setupWifi(WIFI_SSID, WIFI_PASSWORD);
+
         auto* sensor = new TekscanA502(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new BlueCharmBLE(BLE_DEVICE_MAC);
-        auto* alert  = new ConnexxallWiFi(WIFI_SSID, WIFI_PASSWORD);
+        auto* networkClient = new EspNetworkClient();
+        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
     #endif
 
     systemController = new FallDetector(sensor, button, alert);
