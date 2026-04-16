@@ -9,15 +9,18 @@
     #include "drivers/sim/WokwiPotentiometer.cpp"
     #include "drivers/sim/WokwiButton.cpp"
     #include "drivers/sim/SerialConsoleAlert.cpp"
-#elif defined(REAL_BASIC)
-    #include "drivers/real-basic/RealTekscan.h"
-    #include "drivers/real-basic/PhysicalButton.h"
-    #include "drivers/real-basic/LEDAlert.h"
-    #include "drivers/sim/NtfyHttpAlert.cpp"
+#elif defined(IS_REAL)
+    #include "drivers/real/RealTekscan.h"
+    #include "drivers/real/PhysicalButton.h"
+    #include "drivers/real/NtfyHttpAlert.h"
+    #include "drivers/real/EspNetworkClient.h"
+#elif defined(IS_ARCHIVE)
+    #include "drivers/archive/TekscanA502.cpp"
+    #include "drivers/archive/BlueCharmBLE.cpp"
+    #include "drivers/archive/LEDAlert.cpp"
+    #include "drivers/real/EspNetworkClient.h" // shared network client for 
 #else
-    #include "drivers/real/TekscanA502.cpp"
-    #include "drivers/real/BlueCharmBLE.cpp"
-    #include "drivers/real/ConnexxallWiFi.cpp"
+    #error "No build mode defined. Set IS_SIMULATION, IS_REAL, or IS_ARCHIVE via build_flags."
 #endif
 
 FallDetector* systemController = nullptr;
@@ -37,22 +40,22 @@ void setup() {
         auto* sensor = new WokwiPotentiometer(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new WokwiButton(15);
         auto* alert  = new SerialConsoleAlert();
-    #elif defined(REAL_BASIC)
-        Serial.println("Running in REAL-BASIC mode (Tekscan A502 + LED + Button)");
-        /* Physical pins(replace when changed)*/
-        auto* sensor = new RealTekscan(A0, DEFAULT_PRESSURE_THRESHOLD);
-        auto* button = new PhysicalButton(2); 
-        auto* alert  = new LEDAlert(9);
-        auto* networkClient = new EspNetworkClient(); // Use real network client in Sim
-        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
-    #else
-        Serial.println("Running in PRODUCTION mode (Real Hardware)");
-        WiFiSetup::setupWifi(WIFI_SSID, WIFI_PASSWORD);
 
+    #elif defined(IS_REAL)
+        Serial.println("Running in REAL mode (Tekscan A502 + PhysicalButton + Ntfy)");
+        WiFiSetup::setupWifi(WIFI_SSID, WIFI_PASSWORD);
+        /* Physical pins (replace when changed) */
+        auto* sensor        = new RealTekscan(A0, DEFAULT_PRESSURE_THRESHOLD);
+        auto* button        = new PhysicalButton(2);
+        auto* networkClient = new EspNetworkClient();
+        auto* alert         = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
+
+    #elif defined(IS_ARCHIVE)
+        Serial.println("Running in ARCHIVE mode (TekscanA502 + BlueCharm BLE + LED)");
         auto* sensor = new TekscanA502(34, DEFAULT_PRESSURE_THRESHOLD);
         auto* button = new BlueCharmBLE(BLE_DEVICE_MAC);
-        auto* networkClient = new EspNetworkClient();
-        auto* alert  = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
+        auto* alert  = new LEDAlert(9);
+
     #endif
 
     systemController = new FallDetector(sensor, button, alert);

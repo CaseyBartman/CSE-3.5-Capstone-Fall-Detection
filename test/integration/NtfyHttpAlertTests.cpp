@@ -1,4 +1,4 @@
-#include "logic/NtfyHttpAlert.h"
+#include "drivers/real/NtfyHttpAlert.h"
 #include "mocks/NetworkClientSpy.h"
 #include "gtest/gtest.h"
 #include "TestConstants.h"

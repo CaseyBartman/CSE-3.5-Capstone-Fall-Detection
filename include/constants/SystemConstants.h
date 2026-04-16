@@ -8,7 +8,7 @@ const unsigned long LONG_PRESS_MS = 2000;        // Long press threshold
 
 // Sensor Thresholds
 const float DEFAULT_PRESSURE_THRESHOLD = 15.0;   // Default 15% threshold for occupied state
-const float FALL_DETECTION_THRESHOLD = 50.0;      // Threshold for detecting stand-up (rise above this %)
+const float FALL_DETECTION_THRESHOLD = 40.0;      // Threshold for detecting stand-up (rise above this %)
 
 // System Constants
 const int SENSOR_SAMPLE_RATE_MS = 50;            // Sensor sampling rate

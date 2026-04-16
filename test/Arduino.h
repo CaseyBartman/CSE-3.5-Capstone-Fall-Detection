@@ -89,4 +89,6 @@ public:
     }
 };
 
+inline void delay(unsigned long ms) {}
+
 extern SerialClass Serial;
