@@ -18,6 +18,7 @@
     #include "drivers/real/RealTekscan.h"
     #include "drivers/real/PhysicalButton.h"
     #include "drivers/real/NtfyHttpAlert.h"
+    #include "drivers/real/ArduinoNetworkClient.h"
     #include <WiFiS3.h>
     #ifdef ESP32_BUTTON
     #include "drivers/real/EspNetworkClient.h"
@@ -67,9 +68,8 @@ void setup() {
         auto* networkClient = new EspNetworkClient();
         auto* alert         = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
         #else
-        // For Arduino Uno R4, use a different network client or mock
-        INetworkClient* networkClient = nullptr;  // TODO: Implement Arduino Uno R4 network client
-        IAlertSystem* alert = nullptr;  // TODO: Implement alternative alert system
+        auto* networkClient = new ArduinoNetworkClient();
+        auto* alert         = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
         #endif
 
         // Initialize simple HTTP server for ESP32 button signals

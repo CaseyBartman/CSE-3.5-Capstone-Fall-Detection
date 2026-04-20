@@ -1,8 +1,8 @@
 #pragma once
 
 // WiFi Configuration
-const char* WIFI_SSID = "WIFI_SSID";
-const char* WIFI_PASSWORD = "WIFI_PASSWORD";
+const char* WIFI_SSID = "SpectrumSetup-03";
+const char* WIFI_PASSWORD = "mellowstreet073";
 const char* WOKWI_WIFI_SSID = "Wokwi-GUEST";
 
 // // Connexxall API Configuration
