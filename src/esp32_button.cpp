@@ -1,74 +1,58 @@
-/**
- * ESP32 Button Controller - Simplified Client
- * Sends HTTP GET requests to Arduino server when button is pressed
- */
-
-#ifdef ESP32  // Only compile for ESP32 boards
+#ifdef ESP32
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include "constants/NetworkConstants.h"
+#include "constants/SystemConstants.h"
 
-// WiFi Configuration
-const char* WIFI_SSID = "SpectrumSetup-03";
-const char* WIFI_PASSWORD = "mellowstreet073";
-
-// Arduino Server URL
-const char* SERVER_URL = "http://192.168.1.181/trigger";
-
-// Button pin
-const int BUTTON_PIN = 13;
-
-int lastButtonState = HIGH;
+int lastButtonReading = HIGH;
 unsigned long lastPressTime = 0;
 
-// Forward declaration
 void sendSignalToArduino();
 
 void setup() {
-    Serial.begin(115200);
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    Serial.begin(SERIAL_BAUD_RATE);
+    pinMode(ESP32_BUTTON_PIN, INPUT_PULLUP);
 
-    delay(1000);
+    delay(ESP32_STARTUP_DELAY_MS);
     Serial.println("ESP32 Button Controller Starting...");
 
-    // Connect to WiFi
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.print("Connecting to WiFi");
 
     while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
+        delay(WIFI_CONNECT_DELAY_MS);
         Serial.print(".");
     }
 
-    Serial.println("\n✅ ESP32 Connected to WiFi!");
+    Serial.println("\nESP32 Connected to WiFi!");
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
     Serial.print("Will send signals to: ");
-    Serial.println(SERVER_URL);
+    Serial.println(BUTTON_SIGNAL_ENDPOINT);
 }
 
 void loop() {
-    int currentState = digitalRead(BUTTON_PIN);
+    int currentButtonReading = digitalRead(ESP32_BUTTON_PIN);
 
-    // Detect button press (with debounce)
-    if (currentState == LOW && lastButtonState == HIGH && millis() - lastPressTime > 300) {
-        Serial.println("🔘 Button pressed → sending signal to Arduino");
+    if (currentButtonReading == LOW && lastButtonReading == HIGH && millis() - lastPressTime > ESP32_BUTTON_DEBOUNCE_MS) {
+        Serial.println("Button pressed -> sending signal to Arduino");
 
         sendSignalToArduino();
         lastPressTime = millis();
     }
 
-    lastButtonState = currentState;
-    delay(50);
+    lastButtonReading = currentButtonReading;
+    delay(ESP32_LOOP_DELAY_MS);
 }
 
 void sendSignalToArduino() {
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
-        Serial.println("📡 Sending HTTP request...");
+        Serial.println("Sending HTTP request...");
 
-        http.begin(SERVER_URL);
+        http.begin(BUTTON_SIGNAL_ENDPOINT);
         int httpResponseCode = http.GET();
 
         Serial.print("Response code: ");
@@ -78,13 +62,13 @@ void sendSignalToArduino() {
             String payload = http.getString();
             Serial.println("Arduino response: " + payload);
         } else {
-            Serial.println("❌ Request failed");
+            Serial.println("Request failed");
         }
 
         http.end();
     } else {
-        Serial.println("❌ WiFi not connected");
+        Serial.println("WiFi not connected");
     }
 }
 
-#endif  // ESP32
+#endif

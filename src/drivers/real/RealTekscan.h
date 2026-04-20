@@ -7,8 +7,7 @@ class RealTekscan : public IForceSensor {
 private:
     int _pin;
     float _threshold;
-    const float MAX_ADC_VALUE = 1023.0f;  // Arduino Uno R4 ADC resolution (10-bit)
-
+    const float MAX_ADC_VALUE = 1023.0f;
 
 public:
     RealTekscan(int pin, float threshold = DEFAULT_PRESSURE_THRESHOLD);

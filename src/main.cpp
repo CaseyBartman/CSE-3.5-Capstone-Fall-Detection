@@ -20,14 +20,11 @@
     #include "drivers/real/NtfyHttpAlert.h"
     #include "drivers/real/ArduinoNetworkClient.h"
     #include <WiFiS3.h>
-    #ifdef ESP32_BUTTON
-    #include "drivers/real/EspNetworkClient.h"
-    #endif
 #elif defined(IS_ARCHIVE)
     #include "drivers/archive/TekscanA502.cpp"
     #include "drivers/archive/BlueCharmBLE.cpp"
     #include "drivers/archive/LEDAlert.cpp"
-    #include "drivers/real/EspNetworkClient.h" // shared network client for
+    #include "drivers/real/EspNetworkClient.h" // shared network client
 #endif
 
 FallDetector* systemController = nullptr;
@@ -61,13 +58,8 @@ void setup() {
         auto* sensor        = new RealTekscan(A0, DEFAULT_PRESSURE_THRESHOLD);
         auto* button        = new PhysicalButton(2);
         esp32ButtonRef      = button;  // Store reference for ESP32 signal injection
-        #ifdef ESP32_BUTTON
-        auto* networkClient = new EspNetworkClient();
-        auto* alert         = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
-        #else
         auto* networkClient = new ArduinoNetworkClient();
         auto* alert         = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
-        #endif
 
         // Initialize simple HTTP server for ESP32 button signals
         buttonServer = new WiFiServer(80);  // Listen on port 80

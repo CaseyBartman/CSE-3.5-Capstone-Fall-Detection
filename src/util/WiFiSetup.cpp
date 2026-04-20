@@ -3,6 +3,7 @@
 #else
 #include <WiFiS3.h>
 #endif
+#include "constants/SystemConstants.h"
 
 class WiFiSetup {
 public:
@@ -10,10 +11,9 @@ public:
         WiFi.begin(ssid, password);
 
         int attempts = 0;
-        const int maxAttempts = 20;
 
-        while (WiFi.status() != WL_CONNECTED && attempts < maxAttempts) {
-            delay(500);
+        while (WiFi.status() != WL_CONNECTED && attempts < WIFI_MAX_ATTEMPTS) {
+            delay(WIFI_CONNECT_DELAY_MS);
             Serial.println("Connecting...");
             attempts++;
         }

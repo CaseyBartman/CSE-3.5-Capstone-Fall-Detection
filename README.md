@@ -76,15 +76,79 @@ bash run_tests.sh --verbose --clean
 ```
 This script automates the entire test process and provides a clean summary of the results.
 
-### 3. Hardware Deployment (Arduino)
-To deploy the system to a physical Arduino device, you will need to configure the build script to use the **real** hardware drivers instead of the simulated ones.
+### 3. Hardware Deployment
 
-1.  **Modify `combine_to_sketch.py`**: Open the `combine_to_sketch.py` script and change the simulation flag to `False`. This will ensure the script includes the drivers from `src/drivers/real/` instead of `src/drivers/sim/`.
-2.  **Generate the Production Sketch**:
+> **Setup order matters:** Deploy the ESP32 button controller **before** the Arduino. The Arduino begins listening for button signals as soon as it boots, so the ESP32 should already be connected to WiFi and ready to send signals when the Arduino starts up.
+
+#### 3a. Install PlatformIO
+
+PlatformIO is required to build and upload code to both the ESP32 and the Arduino.
+
+1.  **Install PlatformIO IDE extension on VS Code**: Open VS Code → Extensions panel → search `PlatformIO IDE` → Install.
+
+2.  **Open the project**: In VS Code, go to **File → Open Folder** and select the folder containing `platformio.ini`. PlatformIO should detect the config automatically.
+
+    > **Note (Linux only):** To allow serial port access, add yourself to the `dialout` group, then log out and back in:
+    > ```bash
+    > sudo usermod -aG dialout $USER
+    > ```
+
+#### 3b. Configure Network Constants
+
+Before flashing either device, update `include/constants/NetworkConstants.h` with your environment's values:
+
+```cpp
+const char* WIFI_SSID     = "your-network-name";
+const char* WIFI_PASSWORD = "your-network-password";
+const char* ARDUINO_HOST  = "192.168.x.x";           // Arduino's local IP address
+const char* BUTTON_SIGNAL_ENDPOINT = "http://192.168.x.x/trigger";  // Full trigger URL
+```
+
+To find the Arduino's IP address, upload the `real` environment once and read it from the serial monitor output on boot.
+
+> **Tip:** If the IP address shows as `0.0.0.0` or does not appear, press the Arduino's reset button and wait for it to reconnect. Repeat until a valid IP address is printed.
+
+#### 3c. ESP32 Button Controller
+
+1.  **Connect the ESP32 via USB**.
+
+2.  **Build and upload**:
     ```bash
-    python combine_to_sketch.py
+    pio run -e esp32 --target clean
+    pio run -e esp32 --target upload
     ```
-3.  **Compile and Upload**: Open the Arduino IDE, paste the content of the newly generated `sketch.ino`, and upload it to your connected hardware.
+
+3.  **Monitor serial output** to confirm WiFi connection and signal transmission:
+    ```bash
+    pio device monitor -e esp32 --baud 115200
+    ```
+
+#### 3d. Arduino UNO R4 WiFi
+
+1.  **Connect the UNO R4 WiFi via USB**: Use the board's USB-C port.
+
+2.  **Select your build environment**: The project has two environments — pick the one matching your hardware setup:
+    - `real` — Tekscan A502 + physical button + Ntfy alerts
+    - `archive` — Tekscan A502 + BlueCharm BLE + LED *(no longer supported)*
+
+3.  **Build and upload**:
+
+    Build and upload (`real` environment):
+    ```bash
+    pio run -e real --target clean
+    pio run -e real --target upload
+    ```
+
+    Build and upload (`archive` environment):
+    ```bash
+    pio run -e archive --target clean
+    pio run -e archive --target upload
+    ```
+
+4.  **Monitor serial output**:
+    ```bash
+    pio device monitor -e real --baud 115200
+    ```
 
 ## Tips for Future Development
 - **Start with a Test**: Before adding or changing any logic in `FallDetector.cpp`, create a new test case in `test/test_state_machine.cpp` that reproduces the desired behavior or bug. This follows our Test-Driven Design (TDD) philosophy.
