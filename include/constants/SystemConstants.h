@@ -25,3 +25,13 @@ const int HTTPS_DEFAULT_PORT = 443;
 const int HTTP_PREFIX_LENGTH = 7;
 const int HTTPS_PREFIX_LENGTH = 8;
 const int HTTP_STATUS_CODE_OFFSET = 9;
+
+const unsigned long SERIAL_STARTUP_DELAY_MS = 2000;
+const unsigned long CALIB_COMPLETE_DELAY_MS = 3000;
+
+const int ARDUINO_BUTTON_PIN = 2;
+const int ARDUINO_SENSOR_PIN = A0;
+const int SIM_SENSOR_PIN = 34;
+const int SIM_BUTTON_PIN = 15;
+const int ARCHIVE_SENSOR_PIN = 34;
+const int ARCHIVE_LED_PIN = 9;

@@ -21,7 +21,6 @@ void FallDetector::init() {
 void FallDetector::update() {
     _button->update();
     
-    // State machine
     switch (_currentState) {
         case SystemState::IDLE:
             handleIdleState();
@@ -39,14 +38,12 @@ void FallDetector::update() {
             handleAlarmState();
             break;
         case SystemState::SYSTEM_OFF:
-            // Tbd...
             break;
     }
 }
 
 void FallDetector::handleIdleState() {
-    // Check if system is ready and WiFi connected (simulated as always ready)
-    bool isReady = true; // Simplified for now
+    bool isReady = true;
     
     if (isReady) {
         transitionToState(SystemState::POLLING);
@@ -63,19 +60,12 @@ void FallDetector::handlePollingState() {
         return;
     }
 
-    // According to requirements: Short press → INPUT_PAUSED (pause for 2 mins)
     if (_button->wasShortPressed()) {
         Serial.println("Pause requested by nurse (short press)");
         transitionToState(SystemState::INPUT_PAUSED);
         return;
     }
 
-    //THIS BEHAVIOR IS UNDEFINED.... what do we think?
-    // if (_button->wasLongPressed()) {
-    //     Serial.println("Calibration requested by nurse (long press)");
-    //     transitionToState(SystemState::CALIBRATION);
-    //     return;
-    // }
 }
 
 void FallDetector::handleAlarmState() {
@@ -87,14 +77,12 @@ void FallDetector::handleAlarmState() {
 }
 
 void FallDetector::handlePauseState() {
-    // According to requirements: From INPUT_PAUSED, short press → CALIBRATION
     if (_button->wasShortPressed()) {
         Serial.println("Calibration requested by nurse (short press from pause)");
         transitionToState(SystemState::CALIBRATION);
         return;
     }
     
-    // If pause timer expires, return to POLLING
     if (isPauseDurationExpired()) {
         Serial.println("Pause expired, resuming monitoring");
         transitionToState(SystemState::POLLING);
@@ -104,14 +92,12 @@ void FallDetector::handlePauseState() {
 void FallDetector::handleCalibrationState() {
     float pressure = _sensor->getPressurePercentage();
     
-    //This is a very basic implementation- not at all reflective of how we should handle the calibration, but should work for a rough draft simulation
     if (isCalibrationDurationExpired() || _button->wasShortPressed()) {
-        // Save new threshold (current pressure reading)? 
         _calibrationThreshold = pressure;
         Serial.print("Calibration complete - New threshold: ");
         Serial.print(_calibrationThreshold, 4);
         Serial.println("%");
-        delay(3000); //Wait so the state switch isn't immediate
+        delay(CALIB_COMPLETE_DELAY_MS);
         transitionToState(SystemState::POLLING);
     }
 }
@@ -133,7 +119,6 @@ void FallDetector::transitionToState(SystemState newState) {
     _currentState = newState;
     _stateStartTime = millis();
     
-    // Execute state entry actions
     switch (newState) {
         case SystemState::IDLE:
             Serial.println("System in IDLE state - Waiting for readiness");
