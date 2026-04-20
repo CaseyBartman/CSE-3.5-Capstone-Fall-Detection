@@ -3,6 +3,8 @@
  * Sends HTTP GET requests to Arduino server when button is pressed
  */
 
+#ifdef ESP32  // Only compile for ESP32 boards
+
 #include <WiFi.h>
 #include <HTTPClient.h>
 
@@ -84,3 +86,5 @@ void sendSignalToArduino() {
         Serial.println("❌ WiFi not connected");
     }
 }
+
+#endif  // ESP32
