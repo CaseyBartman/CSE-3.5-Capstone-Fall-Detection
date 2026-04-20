@@ -11,15 +11,13 @@ void RealTekscan::init() {
 }
 
 float RealTekscan::getPressurePercentage() {
-    // Read raw ADC value from Tekscan A502 (0-1023)
+    // Read raw ADC value from Tekscan A502 (0-1023 with 10-bit ADC)
     int sensorValue = analogRead(_pin);
     
-    // Convert ADC value to voltage (0-5V)
-    float voltage = sensorValue * (MAX_VOLTAGE / MAX_ADC_VALUE);
-    
-    // Map sensor to 0-100% using FIXED maximum (based on actual sensor range)
-    // Tekscan outputs ~0-11 raw with heavy pressure, so use 20 as the 100% reference
-    float pressurePercentage = (float)sensorValue / (float)SENSOR_MAX_RAW * 100.0f;
+    // Map full 10-bit ADC range (0-1023) to 0-100%
+    // The A502 output voltage scales linearly with applied force;
+    // at max force the output reaches the supply voltage, saturating the ADC at 1023.
+    float pressurePercentage = (float)sensorValue / MAX_ADC_VALUE * 100.0f;
     pressurePercentage = max(0.0f, min(100.0f, pressurePercentage)); // Clamp 0-100
     
     return pressurePercentage;

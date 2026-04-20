@@ -4,7 +4,7 @@
 
 class ArduinoNetworkClient : public INetworkClient {
 private:
-    String _lastResponseBody; // Use Arduino String to hold response body
+    String _lastResponseBody;
 
 public:
     bool isNetworkConnected() const override {
@@ -12,58 +12,74 @@ public:
     }
 
     int post(const char* endpointUrl, const char* contentType, const char* payload) override {
-        // Parse URL - for simplicity, assume it's http://ip:port/path
         String url = endpointUrl;
-        int colonIndex = url.indexOf(':', 7); // After http://
-        int slashIndex = url.indexOf('/', colonIndex);
-        
-        String host = url.substring(7, colonIndex); // Remove http://
-        int port = url.substring(colonIndex + 1, slashIndex).toInt();
-        String path = url.substring(slashIndex);
-        
-        WiFiClient client;
-        if (client.connect(host.c_str(), port)) {
-            // Send HTTP POST request
-            client.print("POST ");
-            client.print(path);
-            client.println(" HTTP/1.1");
-            client.print("Host: ");
-            client.println(host);
-            client.print("Content-Type: ");
-            client.println(contentType);
-            client.print("Content-Length: ");
-            client.println(strlen(payload));
-            client.println("Connection: close");
-            client.println();
-            client.println(payload);
-            
-            // Read response
-            String response = "";
-            bool readingBody = false;
-            int statusCode = -1;
-            
-            while (client.connected() || client.available()) {
-                if (client.available()) {
-                    String line = client.readStringUntil('\n');
-                    if (line.startsWith("HTTP/1.1 ")) {
-                        // Parse status code
-                        int spaceIndex = line.indexOf(' ', 9);
-                        statusCode = line.substring(9, spaceIndex).toInt();
-                    } else if (line == "\r") {
-                        readingBody = true;
-                    } else if (readingBody) {
-                        response += line;
-                    }
-                }
-            }
-            
-            client.stop();
-            _lastResponseBody = response;
-            return statusCode;
+        bool isHttps = url.startsWith("https://");
+        int prefixLen = isHttps ? 8 : 7;  // "https://" vs "http://"
+
+        // Parse host, port, path
+        int colonAfterHost = url.indexOf(':', prefixLen);
+        int firstSlash = url.indexOf('/', prefixLen);
+        if (firstSlash < 0) firstSlash = url.length();
+
+        String host;
+        int port;
+        String path;
+
+        if (colonAfterHost > 0 && colonAfterHost < firstSlash) {
+            host = url.substring(prefixLen, colonAfterHost);
+            port = url.substring(colonAfterHost + 1, firstSlash).toInt();
         } else {
+            host = url.substring(prefixLen, firstSlash);
+            port = isHttps ? 443 : 80;
+        }
+        path = (firstSlash < (int)url.length()) ? url.substring(firstSlash) : String("/");
+
+        // Choose SSL or plain client based on scheme
+        WiFiClient plainClient;
+        WiFiSSLClient sslClient;
+        Client* client = isHttps ? (Client*)&sslClient : (Client*)&plainClient;
+
+        Serial.print("[Network] Connecting to ");
+        Serial.print(host);
+        Serial.print(":");
+        Serial.println(port);
+
+        if (!client->connect(host.c_str(), port)) {
             _lastResponseBody = "Connection failed";
+            Serial.println("[Network] Connection failed");
             return -1;
         }
+
+        // Send HTTP POST
+        client->print("POST "); client->print(path); client->println(" HTTP/1.1");
+        client->print("Host: "); client->println(host);
+        client->print("Content-Type: "); client->println(contentType);
+        client->print("Content-Length: "); client->println(strlen(payload));
+        client->println("Connection: close");
+        client->println();
+        client->print(payload);
+
+        // Read response with timeout
+        int statusCode = -1;
+        bool readingBody = false;
+        _lastResponseBody = "";
+
+        unsigned long timeout = millis() + 8000;
+        while ((client->connected() || client->available()) && millis() < timeout) {
+            if (client->available()) {
+                String line = client->readStringUntil('\n');
+                if (statusCode < 0 && line.startsWith("HTTP/")) {
+                    statusCode = line.substring(9, line.indexOf(' ', 9)).toInt();
+                } else if (line == "\r") {
+                    readingBody = true;
+                } else if (readingBody) {
+                    _lastResponseBody += line;
+                }
+            }
+        }
+
+        client->stop();
+        return statusCode;
     }
 
     const char* getResponseBody() const override {

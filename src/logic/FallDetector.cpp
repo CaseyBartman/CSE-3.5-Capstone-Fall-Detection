@@ -57,7 +57,7 @@ void FallDetector::handlePollingState() {
     float pressure = _sensor->getPressurePercentage();
     bool occupied = _sensor->isOccupied();
     
-    if (occupied && pressure >= FALL_DETECTION_THRESHOLD) { //See that this is just a constant right now. We should have a whole system for detecitng the threshold, but this gets the job done for now
+    if (occupied && pressure >= _calibrationThreshold) {
         Serial.println("Alert! Person detected on mat without supervision.");
         transitionToState(SystemState::ALARM);
         return;
@@ -109,7 +109,7 @@ void FallDetector::handleCalibrationState() {
         // Save new threshold (current pressure reading)? 
         _calibrationThreshold = pressure;
         Serial.print("Calibration complete - New threshold: ");
-        Serial.print(_calibrationThreshold);
+        Serial.print(_calibrationThreshold, 4);
         Serial.println("%");
         delay(3000); //Wait so the state switch isn't immediate
         transitionToState(SystemState::POLLING);

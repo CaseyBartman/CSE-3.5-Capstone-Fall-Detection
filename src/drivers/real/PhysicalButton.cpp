@@ -3,7 +3,7 @@
 
 PhysicalButton::PhysicalButton(int pin, INetworkClient* networkClient, const char* endpointUrl)
     : _pin(pin), _lastState(HIGH), _pressedTime(0),
-      _shortPressFlag(false),
+      _shortPressFlag(false), _injectedPressFlag(false),
       _networkClient(networkClient), _endpointUrl(endpointUrl),
       _lastSignalSentTime(0), _isCurrentlyPressed(false) {}
 
@@ -50,9 +50,6 @@ void PhysicalButton::update() {
     bool currentState = digitalRead(_pin);
     unsigned long currentTime = millis();
 
-    // Reset flags every loop
-    _shortPressFlag = false;
-
     // Detect button press/release edges
     if (_lastState == HIGH && currentState == LOW) {
         _pressedTime = currentTime;
@@ -79,6 +76,52 @@ void PhysicalButton::update() {
     _lastState = currentState;
 }
 
+bool PhysicalButton::wasShortPressed() {
+    if (_shortPressFlag || _injectedPressFlag) {
+        _shortPressFlag = false;
+        _injectedPressFlag = false;
+        return true;
+    }
+    return false;
+}
 bool PhysicalButton::isPressed() { return digitalRead(_pin) == LOW; }
-bool PhysicalButton::wasShortPressed() { return _shortPressFlag; }
 bool PhysicalButton::wasLongPressed() { return false; }  // Long press not used
+
+void PhysicalButton::injectShortPress() {
+    Serial.println("[PhysicalButton] Injecting short press from ESP32 signal");
+    _injectedPressFlag = true;
+}
+
+void PhysicalButton::handleHttpClient(WiFiClient client) {
+    Serial.println("[PhysicalButton] ESP32 client connected");
+
+    // Wait until data is available
+    while (!client.available()) {
+        delay(1);
+    }
+
+    // Read the request line
+    String request = client.readStringUntil('\n');
+    Serial.println("[PhysicalButton] Request: " + request);
+
+    // Drain remaining headers
+    while (client.available()) {
+        client.read();
+    }
+
+    // Inject a short press if this is a /trigger request
+    if (request.indexOf("GET /trigger") != -1) {
+        injectShortPress();
+    }
+
+    // Send HTTP response
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: text/plain");
+    client.println("Connection: close");
+    client.println();
+    client.println("UNO OK");
+
+    delay(1);
+    client.stop();
+    Serial.println("[PhysicalButton] ESP32 client disconnected");
+}
