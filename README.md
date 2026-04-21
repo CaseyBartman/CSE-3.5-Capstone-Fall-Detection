@@ -19,7 +19,7 @@ This repository contains several documents to support a smooth transition to fut
 -   **This `README.md` file** is the primary technical guide for engineers. It covers the system architecture, development setup, testing procedures, and coding standards. If you need to understand *how* the system works or *how* to modify it, start here.
 -   **The `USER_MANUAL.md`** is a non-technical guide for clinical staff (nurses). It explains the system's purpose and day-to-day operation in simple terms, focusing on user workflows and troubleshooting. It can be edited here: https://docs.google.com/document/d/1zu8R34xOgtsTTHlpuhSVWi8CvuyDlSidG8npKi_QmLA/edit?tab=t.0
 -   **The Definition of Done (DoD)** is the product requirements document. It defines the exact system behaviors, user stories, and edge cases. It should be used by engineers to verify the implementation and by stakeholders to understand the system's precise capabilities and limitations. This file is not saved in this repository, but was provided with the other handoff documentation. 
-
+-   **Demo Slides** [is a collection of our previous demo slides, presenting information about our work process and some extra decisions made over time. ](https://docs.google.com/presentation/d/1h_ZhQPfQPRDAlHRoywXK2IdWFrPDU0zuvOjtjLO3NDk/edit?slide=id.g3d6d6350971_7_0#slide=id.g3d6d6350971_7_0)
 ## System States & Workflows
 The system operates based on a state machine that manages its behavior.
 
