@@ -28,12 +28,7 @@ private:
 
 public:
     // Get singleton instance
-    static TimeSimulator* getInstance() {
-        if (_instance == nullptr) {
-            _instance = new TimeSimulator();
-        }
-        return _instance;
-    }
+    static TimeSimulator* getInstance();
 
     /**
      * Advance simulated time by specified milliseconds
@@ -76,25 +71,3 @@ public:
     TimeSimulator(const TimeSimulator&) = delete;
     TimeSimulator& operator=(const TimeSimulator&) = delete;
 };
-
-/**
- * IMPORTANT: This mock provides simulated time, but the actual FallDetector
- * code still calls millis() directly.
- * 
- * To integrate this with the system:
- * 
- * Option 1: Provide a wrapper function in FallDetector that calls a 
- *           time provider interface (DI pattern)
- * 
- * Option 2: Use preprocessor directives to replace millis() calls in tests:
- *           #ifdef TESTING
- *           #define millis() TimeSimulator::getInstance()->getCurrentTime()
- *           #endif
- *
- * Option 3: Pass milliseconds as parameter to FallDetector methods
- *           (requires code refactoring)
- * 
- * Recommended: Implement a getTimeMs() method in FallDetector that
- *              can be overridden or hooked for testing.
- */
-

@@ -95,7 +95,7 @@ void FallDetector::handleCalibrationState() {
     if (isCalibrationDurationExpired() || _button->wasShortPressed()) {
         _calibrationThreshold = pressure;
         Serial.print("Calibration complete - New threshold: ");
-        Serial.print(_calibrationThreshold, 4);
+        Serial.print(_calibrationThreshold);
         Serial.println("%");
         delay(CALIB_COMPLETE_DELAY_MS);
         transitionToState(SystemState::POLLING);

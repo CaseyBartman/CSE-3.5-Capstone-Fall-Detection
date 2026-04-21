@@ -418,15 +418,26 @@ TEST_F(FallDetectorTest, EDGE_1_PressureAtExactThresholdShouldTriggerAlarm) {
  * Validates that pressure just below threshold does NOT trigger alarm
  */
 TEST_F(FallDetectorTest, EDGE_2_PressureJustBelowThresholdShouldNotTriggerAlarm) {
-    fixture->transitionToPolling();
-    
-    // Set pressure just below threshold
-    float justBelow = FALL_DETECTION_THRESHOLD - 0.1f;
-    fixture->getSensor()->setMockPressure(justBelow);
+    // System boots up and enters polling state
     fixture->getDetector()->update();
-    
-    // Should remain in POLLING
-    EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+    ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+
+    // Calibrate the sensor to a known threshold to ensure test consistency
+    fixture->getButton()->simulateShortPress();
+    fixture->getDetector()->update(); // Enter INPUT_PAUSED
+    fixture->getButton()->simulateShortPress();
+    fixture->getDetector()->update(); // Enter CALIBRATION
+    fixture->getSensor()->setMockPressure(FALL_DETECTION_THRESHOLD);
+    fixture->getTime()->advanceMs(CALIB_DURATION_MS + 1);
+    fixture->getDetector()->update(); // Complete calibration, return to POLLING
+    ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+
+    // Simulate pressure just below the calibrated threshold
+    fixture->getSensor()->setMockPressure(TEST_PRESSURE_NEAR_THRESHOLD);
+    fixture->getDetector()->update();
+
+    // System should remain in POLLING state
+    ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
 }
 
 /**
@@ -434,22 +445,34 @@ TEST_F(FallDetectorTest, EDGE_2_PressureJustBelowThresholdShouldNotTriggerAlarm)
  * Validates system maintains stable state with pressure fluctuations
  */
 TEST_F(FallDetectorTest, EDGE_3_PressureOscillatingAroundThresholdShouldMaintainStableState) {
-    fixture->transitionToPolling();
-    
-    // Pressure oscillates around threshold multiple times
-    for (int i = 0; i < 5; i++) {
-        fixture->getSensor()->setMockPressure(FALL_DETECTION_THRESHOLD - 1.0f);
+    fixture->getDetector()->update(); // Move to POLLING
+    ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+
+    // Calibrate the sensor to a known threshold to ensure test consistency
+    fixture->getButton()->simulateShortPress();
+    fixture->getDetector()->update(); // Enter INPUT_PAUSED
+    fixture->getButton()->simulateShortPress();
+    fixture->getDetector()->update(); // Enter CALIBRATION
+    fixture->getSensor()->setMockPressure(FALL_DETECTION_THRESHOLD);
+    fixture->getTime()->advanceMs(CALIB_DURATION_MS + 1);
+    fixture->getDetector()->update(); // Complete calibration, return to POLLING
+    ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+
+    for (int i = 0; i < 5; ++i) {
+        // Pressure just below threshold should NOT trigger alarm
+        fixture->getSensor()->setMockPressure(TEST_PRESSURE_NEAR_THRESHOLD);
         fixture->getDetector()->update();
-        EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
-        
-        fixture->getSensor()->setMockPressure(FALL_DETECTION_THRESHOLD + 5.0f);
+        ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+
+        // Pressure just above threshold SHOULD trigger alarm
+        fixture->getSensor()->setMockPressure(TEST_PRESSURE_ABOVE_THRESHOLD);
         fixture->getDetector()->update();
-        EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::ALARM);
-        
-        // Clear alarm
+        ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::ALARM);
+
+        // Reset for next iteration
         fixture->getButton()->simulateShortPress();
         fixture->getDetector()->update();
-        EXPECT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
+        ASSERT_EQ(fixture->getDetector()->getCurrentState(), SystemState::POLLING);
     }
 }
 

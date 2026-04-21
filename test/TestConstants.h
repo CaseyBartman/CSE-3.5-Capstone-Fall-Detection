@@ -18,7 +18,7 @@ const float TEST_PRESSURE_ABOVE_THRESHOLD = 50.0f;              // Well above FA
 
 // Timing test values
 const unsigned long TEST_TIME_BEFORE_EXPIRY = 1000;             // 1 second before timeout
-const unsigned long TEST_OCCUPIED_STATE_INITIAL = 40.0f;        // Initial occupied pressure
+const unsigned long TEST_OCCUPIED_STATE_INITIAL = 40;        // Initial occupied pressure
 
 // NTFY Testing Values (See TestConstants.cpp for initialization to fix global linker issue)
 extern const char* TEST_NTFY_ENDPOINT;

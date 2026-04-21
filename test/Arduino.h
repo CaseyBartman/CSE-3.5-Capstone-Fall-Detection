@@ -13,6 +13,8 @@
 #include <cstdio>
 #include <iostream>
 #include <cstring>
+#include <functional>
+#include <cstdint>
 
 // Redirect millis() to TimeSimulator for deterministic testing
 #ifdef TESTING_MODE
@@ -92,3 +94,7 @@ public:
 inline void delay(unsigned long ms) {}
 
 extern SerialClass Serial;
+
+#define A0 0
+#define INPUT 0x0
+#define OUTPUT 0x1
