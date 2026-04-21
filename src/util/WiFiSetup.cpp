@@ -1,16 +1,31 @@
+#ifdef ESP32
 #include <WiFi.h>
+#else
+#include <WiFiS3.h>
+#endif
+#include "constants/SystemConstants.h"
 
 class WiFiSetup {
 public:
-    static void setupWifi(const char* ssid, const char* password = "") {
+    static bool setupWifi(const char* ssid, const char* password = "") {
         WiFi.begin(ssid, password);
 
-        while (WiFi.status() != WL_CONNECTED) {
-            delay(1000);
+        int attempts = 0;
+
+        while (WiFi.status() != WL_CONNECTED && attempts < WIFI_MAX_ATTEMPTS) {
+            delay(WIFI_CONNECT_DELAY_MS);
             Serial.println("Connecting...");
+            attempts++;
         }
 
-        Serial.print("Connected to IP Address: ");
-        Serial.println(WiFi.localIP());
+        if (WiFi.status() == WL_CONNECTED) {
+            Serial.println("WiFi connected!");
+            Serial.print("IP Address: ");
+            Serial.println(WiFi.localIP());
+            return true;
+        } else {
+            Serial.println("WiFi connection FAILED");
+            return false;
+        }
     }
 };

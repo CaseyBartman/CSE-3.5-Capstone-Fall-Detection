@@ -1,7 +1,8 @@
 #pragma once
 #include "interfaces/IAlertSystem.h"
 #include "interfaces/INetworkClient.h"
-#include <Arduino.h> // For Serial
+#include "constants/NetworkConstants.h"
+#include <Arduino.h>
 
 class NtfyHttpAlert : public IAlertSystem {
 private:
@@ -42,7 +43,7 @@ public:
 
     void triggerFallAlarm() override {
         _isAlarmActive = true;
-        if (!sendNotification("PATIENT HAS FALLEN!")) {
+        if (!sendNotification(NTFY_FALL_MESSAGE)) {
             Serial.println("DEBUG: Fall alarm transmission failed");
         }
     }
@@ -50,7 +51,7 @@ public:
     void clearAlarm() override {
         if (_isAlarmActive) {
             _isAlarmActive = false;
-            if (!sendNotification("ALARM CLEARED")) {
+            if (!sendNotification(NTFY_CLEAR_MESSAGE)) {
                 Serial.println("DEBUG: Alarm clear transmission failed");
             }
         }

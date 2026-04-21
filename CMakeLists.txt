@@ -28,12 +28,13 @@ add_executable(
     test/integration/NtfyHttpAlertTests.cpp
     test/TestConstants.cpp
     src/logic/FallDetector.cpp
-    test/SerialImpl.cpp
     test/helpers/TimeSimulator.cpp
+    test/SerialImpl.cpp
 )
 
-# Add compile definitions for testing
-target_compile_definitions(fall_detection_tests PRIVATE TESTING_MODE)
+# Add test-specific definitions
+# target_compile_definitions(fall_detection_tests PRIVATE A0=0)
+target_compile_definitions(fall_detection_tests PRIVATE A0=0 TESTING_MODE)
 
 # Link with Google Test
 target_link_libraries(

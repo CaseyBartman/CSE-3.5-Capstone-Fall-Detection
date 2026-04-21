@@ -31,8 +31,9 @@ private:
     // Helper to deep-copy strings (Some weird C++ string behavior with char*)
     char* duplicateString(const char* source) {
         if (!source) return nullptr;
-        char* copy = new char[std::strlen(source) + 1];
-        std::strcpy(copy, source);
+        size_t size = std::strlen(source) + 1;
+        char* copy = new char[size];
+        strcpy_s(copy, size, source);
         return copy;
     }
 
