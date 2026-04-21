@@ -1,3 +1,15 @@
+/**
+ * @file SerialConsoleAlert.cpp
+ * @brief Simulated alert system for Wokwi Arduino simulation
+ * 
+ * Logs fall detection alerts to the Serial monitor instead of sending
+ * to a real alert system (Ntfy, Connexxall, etc.). Used exclusively in
+ * simulation mode for testing the state machine logic.
+ * 
+ * Output: Serial monitor console messages with visual separators
+ * Baud: 115200
+ */
+
 #include "interfaces/IAlertSystem.h"
 #include <Arduino.h>
 
@@ -16,7 +28,7 @@ public:
         _alarmActive = true;
         Serial.println("========================================");
         Serial.println("!!!!! FALL ALARM TRIGGERED !!!!!");
-        Serial.println("Alert sent to Connexxall (Simulated)");
+        Serial.println("Alert sent to Ntfy (Simulated)");
         Serial.println("========================================");
     }
 
@@ -25,7 +37,7 @@ public:
             _alarmActive = false;
             Serial.println("========================================");
             Serial.println("Alarm cleared by nurse");
-            Serial.println("Connexxall alert cleared (Simulated)");
+            Serial.println("Ntfy alert cleared (Simulated)");
             Serial.println("========================================");
         }
     }

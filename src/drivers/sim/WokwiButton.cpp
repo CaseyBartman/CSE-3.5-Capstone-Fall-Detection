@@ -1,3 +1,16 @@
+/**
+ * @file WokwiButton.cpp
+ * @brief Simulated nurse input button for Wokwi Arduino simulation
+ * 
+ * Implements button press detection with debouncing and differentiation
+ * between short presses (<2 seconds) and long presses (>=2 seconds).
+ * 
+ * Pin: GPIO 15 (pull-up button)
+ * Short Press: <2000ms
+ * Long Press: >=2000ms (currently unused per manual)
+ * Debounce: 50ms
+ */
+
 #include "interfaces/INurseInput.h"
 #include "constants/SystemConstants.h"
 #include <Arduino.h>
