@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 const unsigned long PAUSE_DURATION_MS = 120000;
 const unsigned long CALIB_DURATION_MS = 5000;
 const unsigned long DEBOUNCE_DELAY_MS = 50;
