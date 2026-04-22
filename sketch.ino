@@ -7,6 +7,21 @@
 
 // ===== include/constants\NetworkConstants.h =====
 
+/**
+ * @file NetworkConstants.h
+ * @brief Network and alert endpoint configuration
+ * 
+ * Contains WiFi credentials, API endpoints, and alert service URLs.
+ * Separated from system constants for security and ease of configuration.
+ * 
+ * WARNING: Credentials should be moved to secure config storage in production.
+ * 
+ * Services:
+ *   - Ntfy: https://ntfy.sh/ (text-based HTTP push notifications)
+ *   - Connexxall: Legacy healthcare integration (deprecated)
+ *   - Wokwi: Simulated WiFi network for testing
+ */
+
 #pragma once
 
 // WiFi Configuration
@@ -26,6 +41,25 @@ const char* BLE_SERVICE_UUID = "SERVICE_UUID";
 const char* NTFY_HTTP_ENDPOINT = "https://ntfy.sh/patient_fall_alert_5911";
 
 // ===== include/constants\SystemConstants.h =====
+
+/**
+ * @file SystemConstants.h
+ * @brief System-wide timing and threshold constants
+ * 
+ * Centralized configuration for all system timings, pressure thresholds,
+ * pin assignments, and sampling rates. These values must match the physical
+ * hardware capabilities and user requirements.
+ * 
+ * Key Thresholds:
+ *   - PAUSE_DURATION_MS: How long nurse can pause system (2 minutes)
+ *   - CALIB_DURATION_MS: How long calibration samples baseline (5 seconds)
+ *   - FALL_DETECTION_THRESHOLD: Pressure rise that triggers alarm (30%)
+ *   - DEFAULT_PRESSURE_THRESHOLD: Baseline to detect occupancy (5%)
+ * 
+ * Pin Configuration (Simulation):
+ *   - SIM_SENSOR_PIN: GPIO 34 (analog potentiometer)
+ *   - SIM_BUTTON_PIN: GPIO 15 (digital button)
+ */
 
 #pragma once
 
@@ -130,6 +164,22 @@ enum class SystemState {
 
 
 // ===== src/logic/FallDetector.h =====
+
+/**
+ * @file FallDetector.h
+ * @brief Core state machine for patient fall detection system
+ * 
+ * Implements a 6-state finite state machine that monitors patient status
+ * and triggers alerts when a fall is detected. Uses dependency injection
+ * to remain hardware-agnostic and fully testable.
+ * 
+ * States: SYSTEM_OFF -> IDLE -> POLLING -> [ALARM | INPUT_PAUSED | CALIBRATION]
+ * 
+ * Dependencies:
+ *   - IForceSensor: Pressure/occupancy monitoring
+ *   - INurseInput: Button input for pause/calibration
+ *   - IAlertSystem: Alert triggering and clearing
+ */
 
 #pragma once
 
@@ -292,6 +342,17 @@ public:
 
 // ===== src/drivers/sim\SerialConsoleAlert.cpp =====
 
+/**
+ * @file SerialConsoleAlert.cpp
+ * @brief Simulated alert system for Wokwi Arduino simulation
+ * 
+ * Logs fall detection alerts to the Serial monitor instead of sending
+ * to a real alert system (Ntfy, Connexxall, etc.). Used exclusively in
+ * simulation mode for testing the state machine logic.
+ * 
+ * Output: Serial monitor console messages with visual separators
+ * Baud: 115200
+ */
 
 #include <Arduino.h>
 
@@ -310,7 +371,7 @@ public:
         _alarmActive = true;
         Serial.println("========================================");
         Serial.println("!!!!! FALL ALARM TRIGGERED !!!!!");
-        Serial.println("Alert sent to Connexxall (Simulated)");
+        Serial.println("Alert sent to Ntfy (Simulated)");
         Serial.println("========================================");
     }
 
@@ -319,7 +380,7 @@ public:
             _alarmActive = false;
             Serial.println("========================================");
             Serial.println("Alarm cleared by nurse");
-            Serial.println("Connexxall alert cleared (Simulated)");
+            Serial.println("Ntfy alert cleared (Simulated)");
             Serial.println("========================================");
         }
     }
@@ -328,7 +389,18 @@ public:
 
 // ===== src/drivers/sim\WokwiButton.cpp =====
 
-
+/**
+ * @file WokwiButton.cpp
+ * @brief Simulated nurse input button for Wokwi Arduino simulation
+ * 
+ * Implements button press detection with debouncing and differentiation
+ * between short presses (<2 seconds) and long presses (>=2 seconds).
+ * 
+ * Pin: GPIO 15 (pull-up button)
+ * Short Press: <2000ms
+ * Long Press: >=2000ms (currently unused per manual)
+ * Debounce: 50ms
+ */
 
 #include <Arduino.h>
 
@@ -437,6 +509,18 @@ private:
 
 // ===== src/drivers/sim\WokwiPotentiometer.cpp =====
 
+/**
+ * @file WokwiPotentiometer.cpp
+ * @brief Simulated pressure sensor for Wokwi Arduino simulation
+ * 
+ * Maps an analog potentiometer input (0-4095 ADC range) to a pressure
+ * percentage (0-100%) to simulate a real force/pressure sensor in the
+ * Wokwi simulator environment.
+ * 
+ * Pin: GPIO 34 (ADC input)
+ * ADC Range: 0-4095 (12-bit)
+ * Output: 0.0-100.0% pressure
+ */
 
 #include <Arduino.h>
 
@@ -467,10 +551,24 @@ class WokwiPotentiometer : public IForceSensor {
 
 // ===== src/logic\FallDetector.cpp =====
 
+/**
+ * @file FallDetector.cpp
+ * @brief Implementation of the core state machine for fall detection
+ * 
+ * Implements all state handlers and transitions. The state machine follows
+ * these rules:
+ * 
+ * IDLE: Initialization state - immediately transitions to POLLING
+ * POLLING: Normal operation - monitors for falls and button input
+ * ALARM: Fall detected - waits for nurse to acknowledge with button press
+ * INPUT_PAUSED: Nurse paused system - waits 2 minutes or for calibration
+ * CALIBRATION: Sampling baseline - runs for 5 seconds then returns to POLLING
+ * SYSTEM_OFF: Powered down - used for shutdown/reset
+ */
 
 #include <Arduino.h>
-#include <iostream>		
-#include <thread> // Required for std::this_thread::sleep_for		
+#include <iostream>
+#include <thread> // Required for std::this_thread::sleep_for
 #include <chrono>
 
 FallDetector::FallDetector(IForceSensor* sensor, INurseInput* button, IAlertSystem* alert)
@@ -657,6 +755,22 @@ void FallDetector::logStateTransition(SystemState newState) {
 
 
 // ===== src/main.cpp =====
+
+/**
+ * @file main.cpp
+ * @brief Composition root and Arduino entry point
+ * 
+ * Initializes hardware, wires dependencies via constructor injection,
+ * and runs the main control loop. Supports three build modes:
+ * 
+ * 1. IS_SIMULATION: Wokwi simulation (potentiometer + button + Serial logging)
+ * 2. IS_REAL: Real hardware (Tekscan + WiFi button + Ntfy alerts)
+ * 3. IS_ARCHIVE: Legacy implementation (deprecated)
+ * 
+ * Dependency Injection Flow:
+ *   setup() -> Creates sensor/button/alert instances -> FallDetector
+ *   loop()  -> Calls systemController->update() every 50ms
+ */
 
 #include <Arduino.h>
 

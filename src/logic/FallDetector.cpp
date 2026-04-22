@@ -1,3 +1,18 @@
+/**
+ * @file FallDetector.cpp
+ * @brief Implementation of the core state machine for fall detection
+ * 
+ * Implements all state handlers and transitions. The state machine follows
+ * these rules:
+ * 
+ * IDLE: Initialization state - immediately transitions to POLLING
+ * POLLING: Normal operation - monitors for falls and button input
+ * ALARM: Fall detected - waits for nurse to acknowledge with button press
+ * INPUT_PAUSED: Nurse paused system - waits 2 minutes or for calibration
+ * CALIBRATION: Sampling baseline - runs for 5 seconds then returns to POLLING
+ * SYSTEM_OFF: Powered down - used for shutdown/reset
+ */
+
 #include "logic/FallDetector.h"
 #include <Arduino.h>
 
