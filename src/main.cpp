@@ -1,3 +1,19 @@
+/**
+ * @file main.cpp
+ * @brief Composition root and Arduino entry point
+ * 
+ * Initializes hardware, wires dependencies via constructor injection,
+ * and runs the main control loop. Supports three build modes:
+ * 
+ * 1. IS_SIMULATION: Wokwi simulation (potentiometer + button + Serial logging)
+ * 2. IS_REAL: Real hardware (Tekscan + WiFi button + Ntfy alerts)
+ * 3. IS_ARCHIVE: Legacy implementation (deprecated)
+ * 
+ * Dependency Injection Flow:
+ *   setup() -> Creates sensor/button/alert instances -> FallDetector
+ *   loop()  -> Calls systemController->update() every 50ms
+ */
+
 #include <Arduino.h>
 #include "logic/FallDetector.h"
 #include "constants/SystemConstants.h"

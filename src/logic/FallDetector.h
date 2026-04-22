@@ -1,3 +1,19 @@
+/**
+ * @file FallDetector.h
+ * @brief Core state machine for patient fall detection system
+ * 
+ * Implements a 6-state finite state machine that monitors patient status
+ * and triggers alerts when a fall is detected. Uses dependency injection
+ * to remain hardware-agnostic and fully testable.
+ * 
+ * States: SYSTEM_OFF -> IDLE -> POLLING -> [ALARM | INPUT_PAUSED | CALIBRATION]
+ * 
+ * Dependencies:
+ *   - IForceSensor: Pressure/occupancy monitoring
+ *   - INurseInput: Button input for pause/calibration
+ *   - IAlertSystem: Alert triggering and clearing
+ */
+
 #pragma once
 
 #include "interfaces/IForceSensor.h"

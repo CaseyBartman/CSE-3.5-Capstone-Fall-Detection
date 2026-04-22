@@ -1,3 +1,22 @@
+/**
+ * @file SystemConstants.h
+ * @brief System-wide timing and threshold constants
+ * 
+ * Centralized configuration for all system timings, pressure thresholds,
+ * pin assignments, and sampling rates. These values must match the physical
+ * hardware capabilities and user requirements.
+ * 
+ * Key Thresholds:
+ *   - PAUSE_DURATION_MS: How long nurse can pause system (2 minutes)
+ *   - CALIB_DURATION_MS: How long calibration samples baseline (5 seconds)
+ *   - FALL_DETECTION_THRESHOLD: Pressure rise that triggers alarm (30%)
+ *   - DEFAULT_PRESSURE_THRESHOLD: Baseline to detect occupancy (5%)
+ * 
+ * Pin Configuration (Simulation):
+ *   - SIM_SENSOR_PIN: GPIO 34 (analog potentiometer)
+ *   - SIM_BUTTON_PIN: GPIO 15 (digital button)
+ */
+
 #pragma once
 
 #include <Arduino.h>

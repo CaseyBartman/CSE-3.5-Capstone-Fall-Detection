@@ -1,3 +1,18 @@
+/**
+ * @file NetworkConstants.h
+ * @brief Network and alert endpoint configuration
+ * 
+ * Contains WiFi credentials, API endpoints, and alert service URLs.
+ * Separated from system constants for security and ease of configuration.
+ * 
+ * WARNING: Credentials should be moved to secure config storage in production.
+ * 
+ * Services:
+ *   - Ntfy: https://ntfy.sh/ (text-based HTTP push notifications)
+ *   - Connexxall: Legacy healthcare integration (deprecated)
+ *   - Wokwi: Simulated WiFi network for testing
+ */
+
 #pragma once
 
 static const char* WIFI_SSID = "SpectrumSetup-03";
