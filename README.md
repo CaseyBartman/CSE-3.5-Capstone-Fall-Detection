@@ -108,7 +108,12 @@ To find the Arduino's IP address, upload the `real` environment once and read it
 
 > **Tip:** If the IP address shows as `0.0.0.0` or does not appear, press the Arduino's reset button and wait for it to reconnect. Repeat until a valid IP address is printed.
 
-#### 3c. ESP32 Button Controller
+
+#### 3c. Connect to Alerts
+
+1. The alerts will be sent to the NTFY topic registered on ntfy.sh with the endpoint set for the variable `NTFY_HTTP_ENDPOINT` in `NetworkConstants.h`. Navigate to that endpoint on a browser to view the resulting alerts.
+
+#### 3d. ESP32 Button Controller
 
 1.  **Connect the ESP32 via USB**.
 
@@ -123,7 +128,7 @@ To find the Arduino's IP address, upload the `real` environment once and read it
     pio device monitor -e esp32 --baud 115200
     ```
 
-#### 3d. Arduino UNO R4 WiFi
+#### 3e. Arduino UNO R4 WiFi
 
 1.  **Connect the UNO R4 WiFi via USB**: Use the board's USB-C port.
 
