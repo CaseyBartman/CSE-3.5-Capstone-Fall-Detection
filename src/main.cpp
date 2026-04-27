@@ -18,16 +18,15 @@
     #include "drivers/real/NtfyHttpAlert.h"
     #include "drivers/real/ArduinoNetworkClient.h"
     #include <WiFiS3.h>
-#elif defined(IS_ARCHIVE)
-    #include "drivers/archive/TekscanA502.cpp"
-    #include "drivers/archive/BlueCharmBLE.cpp"
-    #include "drivers/archive/LEDAlert.cpp"
-    #include "drivers/real/EspNetworkClient.h"
+#endif
+
+#ifdef SIM_BUTTON
+    #include "drivers/sw_sim/SoftwareButton.h"
 #endif
 
 FallDetector* systemController = nullptr;
 
-#ifdef IS_REAL
+#if defined(IS_REAL) && !defined(SIM_BUTTON)
 WiFiServer* buttonServer = nullptr;
 PhysicalButton* esp32ButtonRef = nullptr;
 #endif
@@ -49,18 +48,28 @@ void setup() {
         auto* alert  = new SerialConsoleAlert();
 
     #elif defined(IS_REAL)
+        #ifdef SIM_BUTTON
+        Serial.println("Running in REAL mode (Tekscan A502 + SoftwareButton + Ntfy)");
+        #else
         Serial.println("Running in REAL mode (Tekscan A502 + PhysicalButton + Ntfy)");
+        #endif
         WiFiSetup::setupWifi(WIFI_SSID, WIFI_PASSWORD);
         /* Physical pins (replace when changed) */
         auto* sensor        = new RealTekscan(ARDUINO_SENSOR_PIN, DEFAULT_PRESSURE_THRESHOLD);
-        auto* button        = new PhysicalButton(ARDUINO_BUTTON_PIN);
-        esp32ButtonRef      = button;
+        #ifdef SIM_BUTTON
+            auto* button = new SoftwareButton();
+        #else
+            auto* button        = new PhysicalButton(ARDUINO_BUTTON_PIN);
+        #endif
         auto* networkClient = new ArduinoNetworkClient();
         auto* alert         = new NtfyHttpAlert(networkClient, NTFY_HTTP_ENDPOINT);
 
-        buttonServer = new WiFiServer(ARDUINO_PORT);
-        buttonServer->begin();
-        Serial.println("HTTP server started - waiting for ESP32 signals at /trigger");
+        #if !defined(SIM_BUTTON)
+            esp32ButtonRef      = button;
+            buttonServer = new WiFiServer(ARDUINO_PORT);
+            buttonServer->begin();
+            Serial.println("HTTP server started - waiting for ESP32 signals at /trigger");
+        #endif
 
     #elif defined(IS_ARCHIVE)
         Serial.println("Running in ARCHIVE mode (TekscanA502 + BlueCharm BLE + LED)");
@@ -81,7 +90,7 @@ void setup() {
 void loop() {
     systemController->update();
     
-    #ifdef IS_REAL
+    #if defined(IS_REAL) && !defined(SIM_BUTTON)
     if (buttonServer && esp32ButtonRef) {
         WiFiClient client = buttonServer->available();
         if (client) {

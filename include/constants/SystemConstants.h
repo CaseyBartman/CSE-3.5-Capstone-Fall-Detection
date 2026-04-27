@@ -5,6 +5,7 @@
 const unsigned long PAUSE_DURATION_MS = 120000;
 const unsigned long CALIB_DURATION_MS = 5000;
 const unsigned long DEBOUNCE_DELAY_MS = 50;
+const unsigned long SHORT_PRESS_MS = 100;
 const unsigned long LONG_PRESS_MS = 2000;
 const unsigned long WIFI_CONNECT_DELAY_MS = 500;
 const unsigned long NETWORK_RESPONSE_TIMEOUT_MS = 8000;

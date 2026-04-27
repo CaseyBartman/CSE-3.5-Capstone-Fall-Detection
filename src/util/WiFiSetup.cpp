@@ -15,6 +15,7 @@ public:
         while (WiFi.status() != WL_CONNECTED && attempts < WIFI_MAX_ATTEMPTS) {
             delay(WIFI_CONNECT_DELAY_MS);
             Serial.println("Connecting...");
+            Serial.println(WiFi.status()); // Add this line
             attempts++;
         }
 
